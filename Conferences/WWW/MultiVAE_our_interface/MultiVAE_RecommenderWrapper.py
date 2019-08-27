@@ -6,8 +6,6 @@ Created on 30/10/18
 @author: Maurizio Ferrari Dacrema
 """
 
-
-
 import os
 import shutil
 import sys
@@ -15,34 +13,26 @@ import sys
 import numpy as np
 from scipy import sparse
 
-
 import seaborn as sn
-sn.set()
 
+sn.set()
 
 import tensorflow as tf
 
-
 from Conferences.WWW.MultiVAE_our_interface.MultiVae_Dae import MultiDAE, MultiVAE
-
 
 from Base.BaseRecommender import BaseRecommender
 from Base.Incremental_Training_Early_Stopping import Incremental_Training_Early_Stopping
 
 
-
 class MultiVAE_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stopping):
-
     RECOMMENDER_NAME = "MultiVAE_RecommenderWrapper"
     DEFAULT_TEMP_FILE_FOLDER = './result_experiments/__Temp_MultiVAE_RecommenderWrapper/'
-
-
 
     def __init__(self, URM_train):
         super(MultiVAE_RecommenderWrapper, self).__init__(URM_train)
 
-
-    def _compute_item_score(self, user_id_array, items_to_compute = None):
+    def _compute_item_score(self, user_id_array, items_to_compute=None):
 
         URM_train_user_slice = self.URM_train[user_id_array]
 
@@ -59,21 +49,17 @@ class MultiVAE_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_St
         else:
             item_scores = item_scores_to_compute
 
-
         return item_scores
 
-
-
     def fit(self,
-            epochs = 100,
-            batch_size = 500,
-            total_anneal_steps = 200000,
-            anneal_cap = 0.2,
-            p_dims = None,
+            epochs=100,
+            batch_size=500,
+            total_anneal_steps=200000,
+            anneal_cap=0.2,
+            p_dims=None,
             use_gpu=False,
             temp_file_folder=None,
             **earlystopping_kwargs):
-
 
         if temp_file_folder is None:
             print("{}: Using default Temp folder '{}'".format(self.RECOMMENDER_NAME, self.DEFAULT_TEMP_FILE_FOLDER))
@@ -84,7 +70,6 @@ class MultiVAE_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_St
 
         if not os.path.isdir(self.temp_file_folder):
             os.makedirs(self.temp_file_folder)
-
 
         if use_gpu:
             os.environ['CUDA_VISIBLE_DEVICES'] = "0"
@@ -103,20 +88,15 @@ class MultiVAE_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_St
         else:
             self.p_dims = p_dims
 
-
-
         tf.reset_default_graph()
-
 
         self.vae = MultiVAE(self.p_dims, lam=0.0, random_seed=98765)
         self.saver, self.logits_var, self.loss_var, self.train_op_var, self.merged_var = self.vae.build_graph()
 
-
-
         arch_str = "I-%s-I" % ('-'.join([str(d) for d in self.vae.dims[1:-1]]))
 
         self.log_dir = self.temp_file_folder + 'log/VAE_anneal{}K_cap{:1.1E}/{}'.format(
-            total_anneal_steps/1000, anneal_cap, arch_str)
+            total_anneal_steps / 1000, anneal_cap, arch_str)
 
         if os.path.exists(self.log_dir):
             shutil.rmtree(self.log_dir)
@@ -126,13 +106,12 @@ class MultiVAE_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_St
         self.summary_writer = tf.summary.FileWriter(self.log_dir, graph=tf.get_default_graph())
 
         self.chkpt_dir = self.temp_file_folder + 'chkpt/VAE_anneal{}K_cap{:1.1E}/{}'.format(
-            total_anneal_steps/1000, anneal_cap, arch_str)
+            total_anneal_steps / 1000, anneal_cap, arch_str)
 
         if not os.path.isdir(self.chkpt_dir):
             os.makedirs(self.chkpt_dir)
 
         print("MultiVAE_RecommenderWrapper: checkpoint directory: %s" % self.chkpt_dir)
-
 
         self.sess = tf.Session()
         self.sess.run(tf.global_variables_initializer())
@@ -140,9 +119,8 @@ class MultiVAE_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_St
         self._update_best_model()
 
         self._train_with_early_stopping(epochs,
-                                        algorithm_name = self.RECOMMENDER_NAME,
+                                        algorithm_name=self.RECOMMENDER_NAME,
                                         **earlystopping_kwargs)
-
 
         self.sess.close()
 
@@ -152,22 +130,13 @@ class MultiVAE_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_St
             print("{}: cleaning temporary files".format(self.RECOMMENDER_NAME))
             shutil.rmtree(self.DEFAULT_TEMP_FILE_FOLDER, ignore_errors=True)
 
-
-
-
-
-
-
     def _prepare_model_for_validation(self):
         pass
-
 
     def _update_best_model(self):
         self.saveModel(self.temp_file_folder, file_name="_best_model")
 
-
     def _run_epoch(self, num_epoch):
-
 
         update_count = 0.0
 
@@ -199,20 +168,13 @@ class MultiVAE_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_St
             if bnum % 100 == 0:
                 summary_train = self.sess.run(self.merged_var, feed_dict=feed_dict)
                 self.summary_writer.add_summary(summary_train,
-                                           global_step=num_epoch * self.batches_per_epoch + bnum)
+                                                global_step=num_epoch * self.batches_per_epoch + bnum)
 
             update_count += 1
 
+    def saveModel(self, folder_path, file_name=None):
 
-
-
-
-
-
-
-    def saveModel(self, folder_path, file_name = None):
-
-        #https://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
+        # https://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
 
         import pickle
 
@@ -223,7 +185,6 @@ class MultiVAE_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_St
 
         saver = tf.train.Saver()
         saver.save(self.sess, folder_path + file_name + "_session")
-
 
         dictionary_to_save = {"n_users": self.n_users,
                               "n_items": self.n_items,
@@ -237,18 +198,13 @@ class MultiVAE_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_St
 
                               }
 
-
         pickle.dump(dictionary_to_save,
                     open(folder_path + file_name, "wb"),
                     protocol=pickle.HIGHEST_PROTOCOL)
 
         print("{}: Saving complete".format(self.RECOMMENDER_NAME))
 
-
-
-
-
-    def loadModel(self, folder_path, file_name = None):
+    def loadModel(self, folder_path, file_name=None):
 
         if file_name is None:
             file_name = self.RECOMMENDER_NAME
@@ -260,8 +216,7 @@ class MultiVAE_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_St
         data_dict = pickle.load(open(folder_path + file_name, "rb"))
 
         for attrib_name in data_dict.keys():
-             self.__setattr__(attrib_name, data_dict[attrib_name])
-
+            self.__setattr__(attrib_name, data_dict[attrib_name])
 
         tf.reset_default_graph()
         self.vae = MultiVAE(self.p_dims, lam=0.0)
@@ -275,10 +230,3 @@ class MultiVAE_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_St
         self.summary_writer = tf.summary.FileWriter(self.log_dir, graph=tf.get_default_graph())
 
         print("{}: Loading complete".format(self.RECOMMENDER_NAME))
-
-
-
-
-
-
-

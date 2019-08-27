@@ -1,11 +1,12 @@
 import numpy as np
 import logging
 
+
 def init_logging(log_path):
     log = logging.getLogger()
     log.setLevel(logging.INFO)
     logFormatter = logging.Formatter('%(asctime)s [%(levelname)s]: %(message)s')
-    
+
     fileHandler = logging.FileHandler(log_path)
     fileHandler.setFormatter(logFormatter)
     log.addHandler(fileHandler)
@@ -14,10 +15,12 @@ def init_logging(log_path):
     consoleHandler.setFormatter(logFormatter)
     log.addHandler(consoleHandler)
 
+
 def get_batch(X, size):
     ids = np.random.choice(len(X), size, replace=False)
     return (X[ids], ids)
-        
+
+
 def noise_validator(noise, allowed_noises):
     '''Validates the noise provided'''
     try:

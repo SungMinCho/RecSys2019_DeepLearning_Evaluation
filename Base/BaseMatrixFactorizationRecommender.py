@@ -14,9 +14,7 @@ import numpy as np
 import scipy.sparse as sps
 
 
-def compute_W_sparse_from_item_latent_factors(ITEM_factors, topK = 100):
-
-
+def compute_W_sparse_from_item_latent_factors(ITEM_factors, topK=100):
     n_items, n_factors = ITEM_factors.shape
 
     block_size = 100
@@ -28,7 +26,6 @@ def compute_W_sparse_from_item_latent_factors(ITEM_factors, topK = 100):
     rows = []
     cols = []
 
-
     # Compute all similarities for each item using vectorization
     while start_item < n_items:
 
@@ -36,9 +33,7 @@ def compute_W_sparse_from_item_latent_factors(ITEM_factors, topK = 100):
 
         this_block_weight = np.dot(ITEM_factors[start_item:end_item, :], ITEM_factors.T)
 
-
         for col_index_in_block in range(this_block_weight.shape[0]):
-
             this_column_weights = this_block_weight[col_index_in_block, :]
             item_original_index = start_item + col_index_in_block
 
@@ -47,7 +42,7 @@ def compute_W_sparse_from_item_latent_factors(ITEM_factors, topK = 100):
             # - Partition the data to extract the set of relevant items
             # - Sort only the relevant items
             # - Get the original item index
-            relevant_items_partition = (-this_column_weights).argpartition(topK-1)[0:topK]
+            relevant_items_partition = (-this_column_weights).argpartition(topK - 1)[0:topK]
             relevant_items_partition_sorting = np.argsort(-this_column_weights[relevant_items_partition])
             top_k_idx = relevant_items_partition[relevant_items_partition_sorting]
 
@@ -59,8 +54,6 @@ def compute_W_sparse_from_item_latent_factors(ITEM_factors, topK = 100):
             rows.extend(top_k_idx[notZerosMask])
             cols.extend(np.ones(numNotZeros) * item_original_index)
 
-
-
         start_item += block_size
 
     W_sparse = sps.csr_matrix((values, (rows, cols)),
@@ -68,9 +61,6 @@ def compute_W_sparse_from_item_latent_factors(ITEM_factors, topK = 100):
                               dtype=np.float32)
 
     return W_sparse
-
-
-
 
 
 class BaseMatrixFactorizationRecommender(BaseRecommender):
@@ -90,14 +80,13 @@ class BaseMatrixFactorizationRecommender(BaseRecommender):
 
         if self._cold_user_mask.any():
             print("{}: Detected {} ({:.2f} %) cold users.".format(
-                self.RECOMMENDER_NAME, self._cold_user_mask.sum(), self._cold_user_mask.sum()/len(self._cold_user_mask)*100))
-
+                self.RECOMMENDER_NAME, self._cold_user_mask.sum(),
+                self._cold_user_mask.sum() / len(self._cold_user_mask) * 100))
 
     def _get_cold_user_mask(self):
         return self._cold_user_mask
 
-
-    def set_URM_train(self, URM_train_new, estimate_model_for_cold_users = False, topK = 100, **kwargs):
+    def set_URM_train(self, URM_train_new, estimate_model_for_cold_users=False, topK=100, **kwargs):
         """
 
         :param URM_train_new:
@@ -107,10 +96,12 @@ class BaseMatrixFactorizationRecommender(BaseRecommender):
         :return:
         """
 
-        assert self.URM_train.shape == URM_train_new.shape, "{}: set_URM_train old and new URM train have different shapes".format(self.RECOMMENDER_NAME)
+        assert self.URM_train.shape == URM_train_new.shape, "{}: set_URM_train old and new URM train have different shapes".format(
+            self.RECOMMENDER_NAME)
 
-        if len(kwargs)>0:
-            print("{}: set_URM_train keyword arguments not supported for this recommender class. Received: {}".format(self.RECOMMENDER_NAME, kwargs))
+        if len(kwargs) > 0:
+            print("{}: set_URM_train keyword arguments not supported for this recommender class. Received: {}".format(
+                self.RECOMMENDER_NAME, kwargs))
 
         self.URM_train = check_matrix(URM_train_new.copy(), 'csr', dtype=np.float32)
         self.URM_train.eliminate_zeros()
@@ -142,18 +133,15 @@ class BaseMatrixFactorizationRecommender(BaseRecommender):
 
             self.USER_factors = self.URM_train.dot(self.ITEM_factors)
 
-            #Divide every row for the sqrt of the profile length
+            # Divide every row for the sqrt of the profile length
             for user_index in range(self.n_users):
 
                 if profile_length_sqrt[user_index] > 0:
-
                     self.USER_factors[user_index, :] /= profile_length_sqrt[user_index]
 
             print("{}: Estimating USER latent factors from ITEM latent factors... done!".format(self.RECOMMENDER_NAME))
 
-
-
-    def _compute_item_score(self, user_id_array, items_to_compute = None):
+    def _compute_item_score(self, user_id_array, items_to_compute=None):
         """
         USER_factors is n_users x n_factors
         ITEM_factors is n_items x n_factors
@@ -168,13 +156,14 @@ class BaseMatrixFactorizationRecommender(BaseRecommender):
         assert self.USER_factors.shape[1] == self.ITEM_factors.shape[1], \
             "{}: User and Item factors have inconsistent shape".format(self.RECOMMENDER_NAME)
 
-        assert self.USER_factors.shape[0] > user_id_array.max(),\
-                "{}: Cold users not allowed. Users in trained model are {}, requested prediction for users up to {}".format(
+        assert self.USER_factors.shape[0] > user_id_array.max(), \
+            "{}: Cold users not allowed. Users in trained model are {}, requested prediction for users up to {}".format(
                 self.RECOMMENDER_NAME, self.USER_factors.shape[0], user_id_array.max())
 
         if items_to_compute is not None:
-            item_scores = - np.ones((len(user_id_array), self.ITEM_factors.shape[0]), dtype=np.float32)*np.inf
-            item_scores[:, items_to_compute] = np.dot(self.USER_factors[user_id_array], self.ITEM_factors[items_to_compute,:].T)
+            item_scores = - np.ones((len(user_id_array), self.ITEM_factors.shape[0]), dtype=np.float32) * np.inf
+            item_scores[:, items_to_compute] = np.dot(self.USER_factors[user_id_array],
+                                                      self.ITEM_factors[items_to_compute, :].T)
         else:
             item_scores = np.dot(self.USER_factors[user_id_array], self.ITEM_factors.T)
 
@@ -184,23 +173,22 @@ class BaseMatrixFactorizationRecommender(BaseRecommender):
 
             if self._cold_user_KNN_model_available:
                 # Add KNN scores for users cold for MF but warm in KNN model
-                cold_users_in_MF_warm_in_KNN_mask = np.logical_and(cold_users_MF_mask, self._warm_user_KNN_mask[user_id_array])
+                cold_users_in_MF_warm_in_KNN_mask = np.logical_and(cold_users_MF_mask,
+                                                                   self._warm_user_KNN_mask[user_id_array])
 
-                item_scores[cold_users_in_MF_warm_in_KNN_mask, :] = self._ItemKNNRecommender._compute_item_score(user_id_array[cold_users_in_MF_warm_in_KNN_mask], items_to_compute=items_to_compute)
+                item_scores[cold_users_in_MF_warm_in_KNN_mask, :] = self._ItemKNNRecommender._compute_item_score(
+                    user_id_array[cold_users_in_MF_warm_in_KNN_mask], items_to_compute=items_to_compute)
 
                 # Set cold users as those neither in MF nor in KNN
-                cold_users_MF_mask = np.logical_and(cold_users_MF_mask, np.logical_not(cold_users_in_MF_warm_in_KNN_mask))
+                cold_users_MF_mask = np.logical_and(cold_users_MF_mask,
+                                                    np.logical_not(cold_users_in_MF_warm_in_KNN_mask))
 
             # Set as -inf all remaining cold user scores
             item_scores[cold_users_MF_mask, :] = - np.ones_like(item_scores[cold_users_MF_mask, :]) * np.inf
 
         return item_scores
 
-
-
-
-
-    def saveModel(self, folder_path, file_name = None):
+    def saveModel(self, folder_path, file_name=None):
 
         if file_name is None:
             file_name = self.RECOMMENDER_NAME
@@ -211,10 +199,8 @@ class BaseMatrixFactorizationRecommender(BaseRecommender):
                               "ITEM_factors": self.ITEM_factors,
                               "_cold_user_mask": self._cold_user_mask}
 
-
         pickle.dump(dictionary_to_save,
                     open(folder_path + file_name, "wb"),
                     protocol=pickle.HIGHEST_PROTOCOL)
-
 
         print("{}: Saving complete".format(self.RECOMMENDER_NAME, folder_path + file_name))

@@ -156,5 +156,3 @@ class CollaborativeMemoryNetwork(ModelBase):
         # Share Embeddings
         self._cur_item_output = self._cur_item
         self._cur_item_output_negative = self._cur_item_negative
-
-

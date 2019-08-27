@@ -6,10 +6,8 @@ Created on 18/12/18
 @author: Maurizio Ferrari Dacrema
 """
 
-
 from Base.BaseRecommender import BaseRecommender
 from Base.Incremental_Training_Early_Stopping import Incremental_Training_Early_Stopping
-
 
 import numpy as np
 import scipy.sparse as sps
@@ -22,7 +20,6 @@ import shutil
 from Conferences.SIGIR.CMN_github.util.cmn import CollaborativeMemoryNetwork
 from Conferences.SIGIR.CMN_github.util.gmf import PairwiseGMF
 from Conferences.SIGIR.CMN_github.util.helper import BaseConfig
-
 
 
 class CMN_Config(object):
@@ -39,7 +36,7 @@ class CMN_Config(object):
                  optimizer_params,
                  learning_rate,
                  pretrain,
-                 max_neighbors = -1
+                 max_neighbors=-1
                  ):
         super(CMN_Config, self).__init__()
 
@@ -61,27 +58,23 @@ class CMN_Config(object):
         self.pretrain = pretrain
         self.max_neighbors = max_neighbors
 
-
     def get_deepcopy(self):
-
         return CMN_Config(**self.get_dict())
 
-
     def get_dict(self):
-
-        attribute_list = [ "logdir",
-                 "embed_size",
-                 "batch_size",
-                 "hops",
-                 "l2",
-                 "user_count",
-                 "item_count",
-                 "optimizer",
-                 "neg_count",
-                 "optimizer_params",
-                 "learning_rate",
-                 "pretrain",
-                 "max_neighbors"]
+        attribute_list = ["logdir",
+                          "embed_size",
+                          "batch_size",
+                          "hops",
+                          "l2",
+                          "user_count",
+                          "item_count",
+                          "optimizer",
+                          "neg_count",
+                          "optimizer_params",
+                          "learning_rate",
+                          "pretrain",
+                          "max_neighbors"]
 
         dictionary = {}
 
@@ -91,14 +84,12 @@ class CMN_Config(object):
         return dictionary
 
 
-
 class EvaluatorModelLoss(object):
 
     def __init__(self):
         pass
 
-    def evaluateRecommender(self, recommender_object, parameter_dictionary = None):
-
+    def evaluateRecommender(self, recommender_object, parameter_dictionary=None):
         average_loss = recommender_object.model._average_loss_evaluation
 
         result_dict = {
@@ -108,12 +99,7 @@ class EvaluatorModelLoss(object):
         return result_dict, str("Average_loss: {}".format(average_loss))
 
 
-
-
-
 class CMN_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stopping):
-
-
     RECOMMENDER_NAME = "CMN_RecommenderWrapper"
     DEFAULT_TEMP_FILE_FOLDER = './result_experiments/__Temp_CMN_RecommenderWrapper/'
 
@@ -133,7 +119,6 @@ class CMN_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stoppin
         self.URM_train = sps.coo_matrix(self.URM_train)
 
         for interaction_index in range(self.URM_train.nnz):
-
             user_idx = self.URM_train.row[interaction_index]
             item_idx = self.URM_train.col[interaction_index]
 
@@ -143,9 +128,6 @@ class CMN_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stoppin
             self.item_users_list[item_idx].append(user_idx)
 
         self.URM_train = sps.csr_matrix(self.URM_train)
-
-
-
 
     def _compute_item_score(self, user_id_array, items_to_compute=None):
 
@@ -163,7 +145,6 @@ class CMN_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stoppin
         input_neighborhood_length_handle = self.model.input_neighborhood_lengths
         score_op = self.model.score
 
-
         for user_index in range(len(user_id_array)):
 
             user_id = user_id_array[user_index]
@@ -173,7 +154,7 @@ class CMN_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stoppin
             # number of items
 
             feed = {
-                #input_user_handle: self._user_ones_vector*user_id,
+                # input_user_handle: self._user_ones_vector*user_id,
                 input_user_handle: np.ones(len(item_indices)) * user_id,
                 input_item_handle: item_indices,
             }
@@ -182,7 +163,8 @@ class CMN_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stoppin
                 # neighborhoods, neighborhood_length = np.zeros((self.n_items, self.cmn_config.max_neighbors),
                 #                                               dtype=np.int32), np.ones(self.n_items, dtype=np.int32)
                 neighborhoods, neighborhood_length = np.zeros((len(item_indices), self.cmn_config.max_neighbors),
-                                                              dtype=np.int32), np.ones(len(item_indices), dtype=np.int32)
+                                                              dtype=np.int32), np.ones(len(item_indices),
+                                                                                       dtype=np.int32)
 
                 for _idx, item in enumerate(item_indices):
                     _len = min(len(neighborhood[item]), self.cmn_config.max_neighbors)
@@ -196,7 +178,6 @@ class CMN_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stoppin
                     input_neighborhood_length_handle: neighborhood_length
                 })
 
-
             item_score_user = self.sess.run(score_op, feed)
 
             if items_to_compute is not None:
@@ -204,9 +185,7 @@ class CMN_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stoppin
             else:
                 item_scores[user_index, :] = item_score_user.ravel()
 
-
         return item_scores
-
 
     def get_early_stopping_final_epochs_dict(self):
         """
@@ -219,28 +198,23 @@ class CMN_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stoppin
 
         return {"epochs": self.epochs_best, "epochs_gmf": self.epochs_best_gmf}
 
-
-
-
     def fit(self,
-            epochs = 100,
-            epochs_gmf = 100,
-            batch_size = 128,
-            embed_size = 50,
-            hops = 2,
-            neg_samples = 4,
-            reg_l2_cmn = 1e-1,
+            epochs=100,
+            epochs_gmf=100,
+            batch_size=128,
+            embed_size=50,
+            hops=2,
+            neg_samples=4,
+            reg_l2_cmn=1e-1,
             reg_l2_gmf=1e-4,
-            pretrain = True,
-            learning_rate = 1e-3,
-            verbose = False,
-            use_gpu = False,
-            temp_file_folder = None,
+            pretrain=True,
+            learning_rate=1e-3,
+            verbose=False,
+            use_gpu=False,
+            temp_file_folder=None,
             **earlystopping_kwargs):
 
-
-
-        #assert learner in ["adagrad", "adam", "rmsprop", "sgd"]
+        # assert learner in ["adagrad", "adam", "rmsprop", "sgd"]
 
         self.verbose = verbose
 
@@ -259,8 +233,6 @@ class CMN_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stoppin
         if not os.path.isdir(self.temp_file_folder):
             os.makedirs(self.temp_file_folder)
 
-
-
         # it is the max number of interaction an item has received
         self.URM_train = sps.csc_matrix(self.URM_train)
         max_neighbors = max(np.ediff1d(self.URM_train.indptr))
@@ -268,40 +240,34 @@ class CMN_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stoppin
         self.URM_train = sps.csr_matrix(self.URM_train)
         self.URM_train_coo = sps.coo_matrix(self.URM_train)
 
-
-
-        self.cmn_config = CMN_Config(logdir = self.temp_file_folder,
-                                     embed_size= embed_size,
-                                     batch_size = batch_size,
-                                     hops = hops,
-                                     l2 = reg_l2_cmn,
-                                     optimizer = "rmsprop",
-                                     neg_count= neg_samples,
-                                     item_count = self.n_items,
-                                     user_count = self.n_users,
-                                     optimizer_params = {"decay": 0.9, "momentum": 0.9},
-                                     learning_rate = learning_rate,
-                                     pretrain = self.temp_file_folder,
-                                     max_neighbors = max_neighbors)
+        self.cmn_config = CMN_Config(logdir=self.temp_file_folder,
+                                     embed_size=embed_size,
+                                     batch_size=batch_size,
+                                     hops=hops,
+                                     l2=reg_l2_cmn,
+                                     optimizer="rmsprop",
+                                     neg_count=neg_samples,
+                                     item_count=self.n_items,
+                                     user_count=self.n_users,
+                                     optimizer_params={"decay": 0.9, "momentum": 0.9},
+                                     learning_rate=learning_rate,
+                                     pretrain=self.temp_file_folder,
+                                     max_neighbors=max_neighbors)
 
         self.cmn_config_clone = self.cmn_config.get_deepcopy()
 
-        self.pairwiseGMF_config = CMN_Config(logdir = self.temp_file_folder,
-                                             embed_size= embed_size,
-                                             batch_size = batch_size,
-                                             hops = hops,
-                                             l2 = reg_l2_gmf,
-                                             optimizer = "adam",
-                                             neg_count= neg_samples,
-                                             item_count = self.n_items,
-                                             user_count = self.n_users,
-                                             optimizer_params = {"decay": 0.9, "momentum": 0.9},
-                                             learning_rate = learning_rate,
-                                             pretrain = self.temp_file_folder)
-
-
-
-
+        self.pairwiseGMF_config = CMN_Config(logdir=self.temp_file_folder,
+                                             embed_size=embed_size,
+                                             batch_size=batch_size,
+                                             hops=hops,
+                                             l2=reg_l2_gmf,
+                                             optimizer="adam",
+                                             neg_count=neg_samples,
+                                             item_count=self.n_items,
+                                             user_count=self.n_users,
+                                             optimizer_params={"decay": 0.9, "momentum": 0.9},
+                                             learning_rate=learning_rate,
+                                             pretrain=self.temp_file_folder)
 
         # Build model
         tf.reset_default_graph()
@@ -309,10 +275,9 @@ class CMN_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stoppin
         self.model = PairwiseGMF(self.pairwiseGMF_config)
         self.sv = tf.train.Supervisor(logdir=None, save_model_secs=0, save_summaries_secs=0)
         self.sess = self.sv.prepare_or_wait_for_session(
-                    config=tf.ConfigProto(gpu_options=tf.GPUOptions(
-                        per_process_gpu_memory_fraction=0.1,
-                        allow_growth=True)))
-
+            config=tf.ConfigProto(gpu_options=tf.GPUOptions(
+                per_process_gpu_memory_fraction=0.1,
+                allow_growth=True)))
 
         self._run_epoch = self._run_epoch_GMF
         self._update_best_model = self._update_best_model_GMF
@@ -324,24 +289,16 @@ class CMN_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stoppin
         evaluator_object_loss_GMF = EvaluatorModelLoss()
 
         self._train_with_early_stopping(epochs_gmf,
-                                        validation_every_n = earlystopping_kwargs["validation_every_n"],
-                                        stop_on_validation = True,
-                                        validation_metric = validation_metric_loss_GMF,
-                                        lower_validations_allowed = earlystopping_kwargs["lower_validations_allowed"],
-                                        evaluator_object = evaluator_object_loss_GMF,
-                                        algorithm_name = self.RECOMMENDER_NAME)
+                                        validation_every_n=earlystopping_kwargs["validation_every_n"],
+                                        stop_on_validation=True,
+                                        validation_metric=validation_metric_loss_GMF,
+                                        lower_validations_allowed=earlystopping_kwargs["lower_validations_allowed"],
+                                        evaluator_object=evaluator_object_loss_GMF,
+                                        algorithm_name=self.RECOMMENDER_NAME)
 
         self.epochs_best_gmf = self.epochs_best
 
         print("CMN_RecommenderWrapper: Pretraining complete")
-
-
-
-
-
-
-
-
 
         # Build model
         tf.reset_default_graph()
@@ -349,22 +306,16 @@ class CMN_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stoppin
         self.model = CollaborativeMemoryNetwork(self.cmn_config)
 
         self.sv = tf.train.Supervisor(logdir=None, save_model_secs=60 * 10,
-                                        save_summaries_secs=0)
+                                      save_summaries_secs=0)
 
         self.sess = self.sv.prepare_or_wait_for_session(config=tf.ConfigProto(
-                    gpu_options=tf.GPUOptions(allow_growth=True)))
-
+            gpu_options=tf.GPUOptions(allow_growth=True)))
 
         self.sess.graph._unsafe_unfinalize()
 
         self.sess.run([
-            self.model.user_memory.embeddings.assign(self._GMF_user_embed*0.5),
-            self.model.item_memory.embeddings.assign(self._GMF_item_embed*0.5)])
-
-
-
-
-
+            self.model.user_memory.embeddings.assign(self._GMF_user_embed * 0.5),
+            self.model.item_memory.embeddings.assign(self._GMF_item_embed * 0.5)])
 
         self._run_epoch = self._run_epoch_CMN
         self._update_best_model = self._update_best_model_CMN
@@ -374,36 +325,27 @@ class CMN_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stoppin
         self._update_best_model()
 
         self._train_with_early_stopping(epochs,
-                                        algorithm_name = self.RECOMMENDER_NAME,
+                                        algorithm_name=self.RECOMMENDER_NAME,
                                         **earlystopping_kwargs)
 
-
         print("CMN_RecommenderWrapper: Tranining complete")
-
 
         self.sess.close()
 
         self.sess = self.sv.prepare_or_wait_for_session(config=tf.ConfigProto(
-                    gpu_options=tf.GPUOptions(allow_growth=True)))
-
+            gpu_options=tf.GPUOptions(allow_growth=True)))
 
         self.loadModel(self.temp_file_folder, file_name="best_model")
-
 
         if self.temp_file_folder == self.DEFAULT_TEMP_FILE_FOLDER:
             print("{}: cleaning temporary files".format(self.RECOMMENDER_NAME))
             shutil.rmtree(self.DEFAULT_TEMP_FILE_FOLDER, ignore_errors=True)
 
-
-
-
     def _prepare_model_for_validation(self):
         pass
 
-
     def _update_best_model_CMN(self):
         self.saveModel(self.temp_file_folder, file_name="best_model")
-
 
     def _update_best_model_GMF(self):
 
@@ -414,10 +356,9 @@ class CMN_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stoppin
         self._GMF_item_embed = self._GMF_item_embed.copy()
         self._GMF_v = self._GMF_v.copy()
 
-
     def _run_epoch_CMN(self, currentEpoch):
 
-        train_data_iterator = self.get_train_data_iterator(neighborhood = True)
+        train_data_iterator = self.get_train_data_iterator(neighborhood=True)
 
         progress = enumerate(train_data_iterator)
 
@@ -447,9 +388,6 @@ class CMN_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stoppin
 
         print("CMN_RecommenderWrapper: Epoch {}: Avg Loss/Batch {:<20,.6f}".format(currentEpoch, np.mean(loss)))
 
-
-
-
     def _run_epoch_GMF(self, currentEpoch):
 
         train_data_iterator = self.get_train_data_iterator(neighborhood=False)
@@ -476,17 +414,10 @@ class CMN_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stoppin
 
         self.model._average_loss_evaluation = np.mean(loss)
 
-        print("CMN_RecommenderWrapper: Epoch {}: Avg Loss/Batch {:<20,.6f}".format(currentEpoch, self.model._average_loss_evaluation))
+        print("CMN_RecommenderWrapper: Epoch {}: Avg Loss/Batch {:<20,.6f}".format(currentEpoch,
+                                                                                   self.model._average_loss_evaluation))
 
-
-
-
-
-
-
-
-
-    def get_train_data_iterator(self, neighborhood = True):
+    def get_train_data_iterator(self, neighborhood=True):
         # Allocate inputs
         batch = np.zeros((self.cmn_config.batch_size, 3), dtype=np.uint32)
         pos_neighbor = np.zeros((self.cmn_config.batch_size, self.cmn_config.max_neighbors), dtype=np.int32)
@@ -550,9 +481,6 @@ class CMN_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stoppin
             else:
                 yield batch[:idx]
 
-
-
-
     def _sample_negative_item(self, user_id):
         """
         Uniformly sample a negative item
@@ -571,23 +499,15 @@ class CMN_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stoppin
             n = self._sample_item()
         return n
 
-
     def _sample_item(self):
         """
         Draw an item uniformly
         """
         return np.random.randint(0, self.n_items)
 
+    def saveModel(self, folder_path, file_name=None):
 
-
-
-
-
-
-
-    def saveModel(self, folder_path, file_name = None):
-
-        #https://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
+        # https://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
 
         import pickle
 
@@ -611,11 +531,7 @@ class CMN_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stoppin
 
         print("{}: Saving complete".format(self.RECOMMENDER_NAME))
 
-
-
-
-
-    def loadModel(self, folder_path, file_name = None):
+    def loadModel(self, folder_path, file_name=None):
 
         if file_name is None:
             file_name = self.RECOMMENDER_NAME
@@ -634,26 +550,19 @@ class CMN_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stoppin
 
             self.__setattr__(attrib_name, data_dict[attrib_name])
 
-
         tf.reset_default_graph()
 
         self.model = CollaborativeMemoryNetwork(self.cmn_config)
 
         self.sv = tf.train.Supervisor(logdir=None, save_model_secs=60 * 10,
-                                        save_summaries_secs=0)
+                                      save_summaries_secs=0)
 
         self.sess = self.sv.prepare_or_wait_for_session(config=tf.ConfigProto(
-                    gpu_options=tf.GPUOptions(allow_growth=True)))
+            gpu_options=tf.GPUOptions(allow_growth=True)))
 
         self.sess.graph._unsafe_unfinalize()
         saver = tf.train.Saver()
 
         saver.restore(self.sess, folder_path + file_name + "_session")
 
-
         print("{}: Loading complete".format(self.RECOMMENDER_NAME))
-
-
-
-
-

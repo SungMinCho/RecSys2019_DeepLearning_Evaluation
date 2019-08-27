@@ -5,9 +5,8 @@ import random as rd
 class Data(object):
     def __init__(self, train_file, test_file, batch_size):
         self.batch_size = batch_size
-        #get number of users and items
+        # get number of users and items
         self.n_users, self.n_items = 0, 0
-
 
         with open(train_file) as f:
             for l in f.readlines():
@@ -54,14 +53,15 @@ class Data(object):
             users = [rd.choice(range(self.n_users)) for _ in range(self.batch_size)]
 
         def sample_pos_items_for_u(u, num):
-            pos_items = self.train_items[u]#np.nonzero(self.graph[u,:])[0].tolist()
+            pos_items = self.train_items[u]  # np.nonzero(self.graph[u,:])[0].tolist()
             if len(pos_items) >= num:
                 return rd.sample(pos_items, num)
             else:
                 return [rd.choice(pos_items) for _ in range(num)]
 
         def sample_neg_items_for_u(u, num):
-            neg_items = list(set(range(self.n_items)) - set(self.train_items[u]))#np.nonzero(self.graph[u,:] == 0)[0].tolist()
+            neg_items = list(
+                set(range(self.n_items)) - set(self.train_items[u]))  # np.nonzero(self.graph[u,:] == 0)[0].tolist()
             return rd.sample(neg_items, num)
 
         pos_items, neg_items = [], []

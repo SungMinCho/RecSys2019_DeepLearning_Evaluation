@@ -6,18 +6,13 @@ Created on 19/02/2019
 @author: Simone Boglio
 """
 
-
-
 import zipfile
 
 from Data_manager.DataReader import DataReader
 from Data_manager.DataReader_utils import downloadFromURL, load_CSV_into_SparseBuilder
 
 
-
-
 class MovielensHetrec2011Reader(DataReader):
-
     DATASET_URL = "http://files.grouplens.org/datasets/hetrec2011/hetrec2011-movielens-2k-v2.zip"
     DATASET_SUBFOLDER = "MovielensHetrec2011/"
     AVAILABLE_ICM = []
@@ -28,14 +23,12 @@ class MovielensHetrec2011Reader(DataReader):
     def _get_dataset_name_root(self):
         return self.DATASET_SUBFOLDER
 
-
-
     def _load_from_original_file(self):
         # Load data from original
 
         print("MovielensHetrec2011: Loading original data")
 
-        zipFile_path =  self.DATASET_SPLIT_ROOT_FOLDER + self.DATASET_SUBFOLDER
+        zipFile_path = self.DATASET_SPLIT_ROOT_FOLDER + self.DATASET_SUBFOLDER
 
         try:
 
@@ -49,12 +42,10 @@ class MovielensHetrec2011Reader(DataReader):
 
             dataFile = zipfile.ZipFile(zipFile_path + "hetrec2011-movielens-2k-v2.zip")
 
-
         URM_path = dataFile.extract("user_ratedmovies.dat", path=zipFile_path + "decompressed/")
 
-
-        self.URM_all, self.item_original_ID_to_index, self.user_original_ID_to_index = load_CSV_into_SparseBuilder(URM_path, separator="\t")
-
+        self.URM_all, self.item_original_ID_to_index, self.user_original_ID_to_index = load_CSV_into_SparseBuilder(
+            URM_path, separator="\t")
 
         print("MovielensHetrec2011: cleaning temporary files")
 
@@ -63,4 +54,3 @@ class MovielensHetrec2011Reader(DataReader):
         shutil.rmtree(zipFile_path + "decompressed", ignore_errors=True)
 
         print("MovielensHetrec2011: loading complete")
-

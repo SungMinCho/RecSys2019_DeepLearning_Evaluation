@@ -32,7 +32,6 @@ class BaseRecommender(object):
         self.items_to_ignore_flag = False
         self.items_to_ignore_ID = np.array([], dtype=np.int)
 
-
     def fit(self):
         pass
 
@@ -41,13 +40,14 @@ class BaseRecommender(object):
 
     def set_URM_train(self, URM_train_new, **kwargs):
 
-        assert self.URM_train.shape == URM_train_new.shape, "{}: set_URM_train old and new URM train have different shapes".format(self.RECOMMENDER_NAME)
+        assert self.URM_train.shape == URM_train_new.shape, "{}: set_URM_train old and new URM train have different shapes".format(
+            self.RECOMMENDER_NAME)
 
-        if len(kwargs)>0:
-            print("{}: set_URM_train keyword arguments not supported for this recommender class. Received: {}".format(self.RECOMMENDER_NAME, kwargs))
+        if len(kwargs) > 0:
+            print("{}: set_URM_train keyword arguments not supported for this recommender class. Received: {}".format(
+                self.RECOMMENDER_NAME, kwargs))
 
         self.URM_train = URM_train_new.copy()
-
 
     def set_items_to_ignore(self, items_to_ignore):
 
@@ -59,16 +59,13 @@ class BaseRecommender(object):
         self.items_to_ignore_flag = False
         self.items_to_ignore_ID = np.array([], dtype=np.int)
 
-
     def _remove_TopPop_on_scores(self, scores_batch):
         scores_batch[:, self.filterTopPop_ItemsID] = -np.inf
         return scores_batch
 
-
     def _remove_CustomItems_on_scores(self, scores_batch):
         scores_batch[:, self.items_to_ignore_ID] = -np.inf
         return scores_batch
-
 
     def _remove_seen_on_scores(self, user_id, scores):
 
@@ -79,9 +76,7 @@ class BaseRecommender(object):
         scores[seen] = -np.inf
         return scores
 
-
-
-    def _get_temp_folder(self, custom_temp_folder = None):
+    def _get_temp_folder(self, custom_temp_folder=None):
         """
         The function returns the path of a folder in result_experiments
         The function guarantees that the folder is not already existent and it creates it
@@ -96,7 +91,6 @@ class BaseRecommender(object):
             counter_suffix = 0
 
             while os.path.isdir(progressive_temp_folder_name):
-
                 counter_suffix += 1
                 progressive_temp_folder_name = default_temp_folder_name + "_" + str(counter_suffix)
 
@@ -115,9 +109,7 @@ class BaseRecommender(object):
 
             return custom_temp_folder
 
-
-
-    def _compute_item_score(self, user_id_array, items_to_compute = None):
+    def _compute_item_score(self, user_id_array, items_to_compute=None):
         """
 
         :param user_id_array:       array containing the user indices whose recommendations need to be computed
@@ -125,15 +117,11 @@ class BaseRecommender(object):
                                         If None, all items are computed, otherwise discarded items will have as score -np.inf
         :return:                    array (len(user_id_array), n_items) with the score.
         """
-        raise NotImplementedError("BaseRecommender: compute_item_score not assigned for current recommender, unable to compute prediction scores")
+        raise NotImplementedError(
+            "BaseRecommender: compute_item_score not assigned for current recommender, unable to compute prediction scores")
 
-
-
-
-
-
-    def recommend(self, user_id_array, cutoff = None, remove_seen_flag=True, items_to_compute = None,
-                  remove_top_pop_flag = False, remove_CustomItems_flag = False, return_scores = False):
+    def recommend(self, user_id_array, cutoff=None, remove_seen_flag=True, items_to_compute=None,
+                  remove_top_pop_flag=False, remove_CustomItems_flag=False, return_scores=False):
 
         # If is a scalar transform it in a 1-cell array
         if np.isscalar(user_id_array):
@@ -142,14 +130,12 @@ class BaseRecommender(object):
         else:
             single_user = False
 
-
         if cutoff is None:
             cutoff = self.URM_train.shape[1] - 1
 
         # Compute the scores using the model-specific function
         # Vectorize over all users in user_id_array
         scores_batch = self._compute_item_score(user_id_array, items_to_compute=items_to_compute)
-
 
         # if self.normalize:
         #     # normalization will keep the scores in the same range
@@ -165,13 +151,12 @@ class BaseRecommender(object):
         #     den[np.abs(den) < 1e-6] = 1.0  # to avoid NaNs
         #     scores /= den
 
-
         for user_index in range(len(user_id_array)):
 
             user_id = user_id_array[user_index]
 
             if remove_seen_flag:
-                scores_batch[user_index,:] = self._remove_seen_on_scores(user_id, scores_batch[user_index, :])
+                scores_batch[user_index, :] = self._remove_seen_on_scores(user_id, scores_batch[user_index, :])
 
             # Sorting is done in three steps. Faster then plain np.argsort for higher number of items
             # - Partition the data to extract the set of relevant items
@@ -183,7 +168,6 @@ class BaseRecommender(object):
             #
             # ranking_list.append(ranking)
 
-
         if remove_top_pop_flag:
             scores_batch = self._remove_TopPop_on_scores(scores_batch)
 
@@ -191,14 +175,16 @@ class BaseRecommender(object):
             scores_batch = self._remove_CustomItems_on_scores(scores_batch)
 
         # relevant_items_partition is block_size x cutoff
-        relevant_items_partition = (-scores_batch).argpartition(cutoff, axis=1)[:,0:cutoff]
+        relevant_items_partition = (-scores_batch).argpartition(cutoff, axis=1)[:, 0:cutoff]
 
         # Get original value and sort it
         # [:, None] adds 1 dimension to the array, from (block_size,) to (block_size,1)
         # This is done to correctly get scores_batch value as [row, relevant_items_partition[row,:]]
-        relevant_items_partition_original_value = scores_batch[np.arange(scores_batch.shape[0])[:, None], relevant_items_partition]
+        relevant_items_partition_original_value = scores_batch[
+            np.arange(scores_batch.shape[0])[:, None], relevant_items_partition]
         relevant_items_partition_sorting = np.argsort(-relevant_items_partition_original_value, axis=1)
-        ranking = relevant_items_partition[np.arange(relevant_items_partition.shape[0])[:, None], relevant_items_partition_sorting]
+        ranking = relevant_items_partition[
+            np.arange(relevant_items_partition.shape[0])[:, None], relevant_items_partition_sorting]
 
         ranking_list = [None] * ranking.shape[0]
 
@@ -213,12 +199,9 @@ class BaseRecommender(object):
             user_recommendation_list = user_recommendation_list[not_inf_scores_mask]
             ranking_list[user_index] = user_recommendation_list.tolist()
 
-
-
         # Return single list for one user, instead of list of lists
         if single_user:
             ranking_list = ranking_list[0]
-
 
         if return_scores:
             return ranking_list, scores_batch
@@ -226,30 +209,19 @@ class BaseRecommender(object):
         else:
             return ranking_list
 
-
-
-
-
-
-    def saveModel(self, folder_path, file_name = None):
+    def saveModel(self, folder_path, file_name=None):
         raise NotImplementedError("BaseRecommender: saveModel not implemented")
 
-
-
-
-    def loadModel(self, folder_path, file_name = None):
+    def loadModel(self, folder_path, file_name=None):
 
         if file_name is None:
             file_name = self.RECOMMENDER_NAME
 
         print("{}: Loading model from file '{}'".format(self.RECOMMENDER_NAME, folder_path + file_name))
 
-
         data_dict = pickle.load(open(folder_path + file_name, "rb"))
 
         for attrib_name in data_dict.keys():
-             self.__setattr__(attrib_name, data_dict[attrib_name])
-
+            self.__setattr__(attrib_name, data_dict[attrib_name])
 
         print("{}: Loading complete".format(self.RECOMMENDER_NAME))
-

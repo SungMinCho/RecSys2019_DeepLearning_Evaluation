@@ -13,16 +13,14 @@ import numpy as np
 from Data_manager.DataReader_utils import downloadFromURL
 from Data_manager.load_and_save_data import save_data_dict, load_data_dict
 
-
 from Data_manager.IncrementalSparseMatrix import IncrementalSparseMatrix
 from Data_manager.split_functions.split_train_validation import split_train_validation_percentage_user_wise
 
-class AmazonInstantVideoReader:
 
+class AmazonInstantVideoReader:
     DATASET_URL = "http://snap.stanford.edu/data/amazon/productGraph/categoryFiles/ratings_Amazon_Instant_Video.csv"
     DATASET_SPLIT_ROOT_FOLDER = "Data_manager_split_datasets/"
     DATASET_SUBFOLDER = "AmazonInstantVideo/"
-
 
     def __init__(self):
 
@@ -42,7 +40,7 @@ class AmazonInstantVideoReader:
             print("Dataset_AmazonInstantVideo: Attempting to load pre-splitted data")
 
             for attrib_name, attrib_object in load_data_dict(pre_splitted_path, pre_splitted_filename).items():
-                 self.__setattr__(attrib_name, attrib_object)
+                self.__setattr__(attrib_name, attrib_object)
 
 
         except FileNotFoundError:
@@ -54,7 +52,8 @@ class AmazonInstantVideoReader:
             downloadFromURL(self.DATASET_URL, folder_path, ratings_file_name)
 
             # read Amazon Instant Video
-            df = pd.read_csv(folder_path + ratings_file_name, sep=',', header=None, names=['user', 'item', 'rating', 'timestamp'])[
+            df = pd.read_csv(folder_path + ratings_file_name, sep=',', header=None,
+                             names=['user', 'item', 'rating', 'timestamp'])[
                 ['user', 'item', 'rating']]
 
             # keep only ratings = 5
@@ -62,7 +61,7 @@ class AmazonInstantVideoReader:
             URM_train_builder.add_data_lists(df['user'].values, df['item'].values, df['rating'].values)
             URM_all = URM_train_builder.get_SparseMatrix()
 
-            URM_all.data = URM_all.data==5
+            URM_all.data = URM_all.data == 5
             URM_all.eliminate_zeros()
 
             # keep only users with at least 5 ratings
@@ -70,9 +69,13 @@ class AmazonInstantVideoReader:
 
             # create train - test - validation
 
-            URM_train_original, self.URM_test = split_train_validation_percentage_user_wise(URM_all, train_percentage=1-test_percentage, verbose=False)
+            URM_train_original, self.URM_test = split_train_validation_percentage_user_wise(URM_all,
+                                                                                            train_percentage=1 - test_percentage,
+                                                                                            verbose=False)
 
-            self.URM_train, self.URM_validation = split_train_validation_percentage_user_wise(URM_train_original, train_percentage=1-validation_percentage, verbose=False)
+            self.URM_train, self.URM_validation = split_train_validation_percentage_user_wise(URM_train_original,
+                                                                                              train_percentage=1 - validation_percentage,
+                                                                                              verbose=False)
 
             data_dict = {
                 "URM_train": self.URM_train,
@@ -82,9 +85,6 @@ class AmazonInstantVideoReader:
 
             save_data_dict(data_dict, pre_splitted_path, pre_splitted_filename)
 
-
-
         print("Dataset_AmazonInstantVideo: Dataset loaded")
 
         ut.print_stat_datareader(self)
-

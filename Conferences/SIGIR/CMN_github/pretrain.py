@@ -29,6 +29,7 @@ parser.add_argument('-o', '--output', help='save filename for trained embeddings
 FLAGS = parser.parse_args()
 os.environ['CUDA_VISIBLE_DEVICES'] = FLAGS.gpu
 
+
 class Config(BaseConfig):
     filename = FLAGS.dataset
     embed_size = FLAGS.embedding
@@ -39,6 +40,7 @@ class Config(BaseConfig):
     optimizer = 'adam'
     neg_count = FLAGS.neg
     learning_rate = 0.001
+
 
 config = Config()
 dataset = Dataset(config.filename)

@@ -6,17 +6,13 @@ Created on 31/10/18
 @author: Maurizio Ferrari Dacrema
 """
 
-
-
 import os
 import sys
 
 import numpy as np
 from scipy import sparse
 
-
 import pandas as pd
-
 
 
 # Data splitting procedure
@@ -26,12 +22,10 @@ import pandas as pd
 # Only keep items that are clicked on by at least 5 users
 
 
-
 def get_count(tp, id):
     playcount_groupbyid = tp[[id]].groupby(id, as_index=False)
     count = playcount_groupbyid.size()
     return count
-
 
 
 def filter_triplets(tp, min_uc=5, min_sc=0):
@@ -49,9 +43,6 @@ def filter_triplets(tp, min_uc=5, min_sc=0):
     # Update both usercount and itemcount after filtering
     usercount, itemcount = get_count(tp, 'userId'), get_count(tp, 'movieId')
     return tp, usercount, itemcount
-
-
-
 
 
 def split_train_test_proportion(data, test_prop=0.2):
@@ -88,20 +79,13 @@ def numerize(tp, profile2id, show2id):
     return pd.DataFrame(data={'uid': uid, 'sid': sid}, columns=['uid', 'sid'])
 
 
-
-
-
 def split_train_validation_test_VAE_CF_original(URM_dataframe, pro_dir, n_heldout_users):
-
-
     raw_data, user_activity, item_popularity = filter_triplets(URM_dataframe)
-
 
     sparsity = 1. * raw_data.shape[0] / (user_activity.shape[0] * item_popularity.shape[0])
 
     print("After filtering, there are %d watching events from %d users and %d movies (sparsity: %.3f%%)" %
           (raw_data.shape[0], user_activity.shape[0], item_popularity.shape[0], sparsity * 100))
-
 
     unique_uid = user_activity.index
 
@@ -112,11 +96,9 @@ def split_train_validation_test_VAE_CF_original(URM_dataframe, pro_dir, n_heldou
     # create train/validation/test users
     n_users = unique_uid.size
 
-
     tr_users = unique_uid[:(n_users - n_heldout_users * 2)]
     vd_users = unique_uid[(n_users - n_heldout_users * 2): (n_users - n_heldout_users)]
     te_users = unique_uid[(n_users - n_heldout_users):]
-
 
     train_plays = raw_data.loc[raw_data['userId'].isin(tr_users)]
 
@@ -124,7 +106,6 @@ def split_train_validation_test_VAE_CF_original(URM_dataframe, pro_dir, n_heldou
 
     show2id = dict((sid, i) for (i, sid) in enumerate(unique_sid))
     profile2id = dict((pid, i) for (i, pid) in enumerate(unique_uid))
-
 
     if not os.path.exists(pro_dir):
         os.makedirs(pro_dir)
@@ -141,12 +122,7 @@ def split_train_validation_test_VAE_CF_original(URM_dataframe, pro_dir, n_heldou
     test_plays = raw_data.loc[raw_data['userId'].isin(te_users)]
     test_plays = test_plays.loc[test_plays['movieId'].isin(unique_sid)]
 
-
     test_plays_tr, test_plays_te = split_train_test_proportion(test_plays)
-
-
-
-
 
     train_data = numerize(train_plays, profile2id, show2id)
     train_data.to_csv(os.path.join(pro_dir, 'train.csv'), index=False)
@@ -163,12 +139,7 @@ def split_train_validation_test_VAE_CF_original(URM_dataframe, pro_dir, n_heldou
     test_data_te = numerize(test_plays_te, profile2id, show2id)
     test_data_te.to_csv(os.path.join(pro_dir, 'test_te.csv'), index=False)
 
-
-
     return train_data, vad_data_tr, vad_data_te, test_data_tr, test_data_te
-
-
-
 
 
 def load_train_data(csv_file, n_items):
@@ -177,7 +148,7 @@ def load_train_data(csv_file, n_items):
 
     rows, cols = tp['uid'], tp['sid']
     data = sparse.csr_matrix((np.ones_like(rows),
-                             (rows, cols)), dtype='float64',
+                              (rows, cols)), dtype='float64',
                              shape=(n_users, n_items))
     return data
 
@@ -193,18 +164,13 @@ def load_tr_te_data(csv_file_tr, csv_file_te, n_items):
     rows_te, cols_te = tp_te['uid'] - start_idx, tp_te['sid']
 
     data_tr = sparse.csr_matrix((np.ones_like(rows_tr),
-                             (rows_tr, cols_tr)), dtype='float64', shape=(end_idx - start_idx + 1, n_items))
+                                 (rows_tr, cols_tr)), dtype='float64', shape=(end_idx - start_idx + 1, n_items))
     data_te = sparse.csr_matrix((np.ones_like(rows_te),
-                             (rows_te, cols_te)), dtype='float64', shape=(end_idx - start_idx + 1, n_items))
+                                 (rows_te, cols_te)), dtype='float64', shape=(end_idx - start_idx + 1, n_items))
     return data_tr, data_te
 
 
-
-
-
 def load_data_VAE_CF(pro_dir):
-
-
     unique_sid = list()
 
     with open(os.path.join(pro_dir, 'unique_sid.txt'), 'r') as f:
@@ -213,30 +179,22 @@ def load_data_VAE_CF(pro_dir):
 
     n_items = len(unique_sid)
 
-
     train_data = load_train_data(os.path.join(pro_dir, 'train.csv'), n_items)
-
 
     vad_data_tr, vad_data_te = load_tr_te_data(os.path.join(pro_dir, 'validation_tr.csv'),
                                                os.path.join(pro_dir, 'validation_te.csv'), n_items)
-
 
     test_data_tr, test_data_te = load_tr_te_data(
         os.path.join(pro_dir, 'test_tr.csv'),
         os.path.join(pro_dir, 'test_te.csv'), n_items)
 
-
-
-
     return train_data, vad_data_tr, vad_data_te, test_data_tr, test_data_te, n_items
 
 
-
-import  scipy.sparse as sps
+import scipy.sparse as sps
 
 
 def offset_sparse_matrix_row(URM, offset_row):
-
     URM_coo = sps.coo_matrix(URM.copy())
 
     URM_coo.row += offset_row
@@ -244,12 +202,10 @@ def offset_sparse_matrix_row(URM, offset_row):
     return sps.csr_matrix((URM_coo.data, (URM_coo.row, URM_coo.col)))
 
 
-
 import shutil
 
 
 def split_train_validation_test_VAE_CF(URM_dataframe, n_heldout_users):
-
     split_dir = "./result_experiments/__Temp_MultiVAE_Splitter/"
 
     split_train_validation_test_VAE_CF_original(URM_dataframe, split_dir, n_heldout_users)
@@ -257,7 +213,6 @@ def split_train_validation_test_VAE_CF(URM_dataframe, n_heldout_users):
 
     # Remove temp files
     shutil.rmtree(split_dir, ignore_errors=True)
-
 
     from Base.Recommender_utils import reshapeSparse
 
@@ -278,11 +233,9 @@ def split_train_validation_test_VAE_CF(URM_dataframe, n_heldout_users):
     URM_test = offset_sparse_matrix_row(test_data_te, n_train_and_validation_users)
     URM_test = reshapeSparse(URM_test, URM_train_all_shape)
 
-
     URM_train_only = sps.csr_matrix(URM_train_only)
     URM_train_all = sps.csr_matrix(URM_train_all)
     URM_validation = sps.csr_matrix(URM_validation)
     URM_test = sps.csr_matrix(URM_test)
-
 
     return URM_train_only, URM_train_all, URM_validation, URM_test

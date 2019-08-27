@@ -17,10 +17,8 @@ class ItemKNN_CFCBF_Hybrid_Recommender(ItemKNNCBFRecommender, BaseSimilarityMatr
 
     RECOMMENDER_NAME = "ItemKNN_CFCBF_HybridRecommender"
 
-    def fit(self, ICM_weight = 1.0, **fit_args):
-
-        self.ICM = self.ICM*ICM_weight
+    def fit(self, ICM_weight=1.0, **fit_args):
+        self.ICM = self.ICM * ICM_weight
         self.ICM = sps.hstack([self.ICM, self.URM_train.T], format='csr')
 
         super(ItemKNN_CFCBF_Hybrid_Recommender, self).fit(**fit_args)
-

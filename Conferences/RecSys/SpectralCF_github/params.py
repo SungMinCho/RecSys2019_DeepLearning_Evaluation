@@ -10,4 +10,4 @@ N_EPOCH = 200
 LR = 0.001
 DROPOUT = 0.0
 
-DIR = './data/'+DATASET+'/'
+DIR = './data/' + DATASET + '/'

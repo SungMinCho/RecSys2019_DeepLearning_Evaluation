@@ -15,8 +15,8 @@ from Data_manager.IncrementalSparseMatrix import IncrementalSparseMatrix
 from Data_manager.split_functions.split_train_validation import split_train_validation_leave_one_out_user_wise
 from Data_manager.load_and_save_data import save_data_dict, load_data_dict
 
-class PinterestICCVReader(object):
 
+class PinterestICCVReader(object):
 
     def __init__(self):
 
@@ -35,7 +35,7 @@ class PinterestICCVReader(object):
             print("Dataset_Pinterest: Attempting to load pre-splitted data")
 
             for attrib_name, attrib_object in load_data_dict(pre_splitted_path, pre_splitted_filename).items():
-                 self.__setattr__(attrib_name, attrib_object)
+                self.__setattr__(attrib_name, attrib_object)
 
 
         except FileNotFoundError:
@@ -52,33 +52,25 @@ class PinterestICCVReader(object):
             self.URM_train_original = self.URM_train_original.tocsr()
             self.URM_test = self.URM_test.tocsr()
 
-
             from Base.Recommender_utils import reshapeSparse
-
 
             shape = (max(self.URM_train_original.shape[0], self.URM_test.shape[0]),
                      max(self.URM_train_original.shape[1], self.URM_test.shape[1]))
 
-
             self.URM_train_original = reshapeSparse(self.URM_train_original, shape)
             self.URM_test = reshapeSparse(self.URM_test, shape)
-
 
             URM_test_negatives_builder = IncrementalSparseMatrix(n_rows=shape[0], n_cols=shape[1])
 
             for user_index in range(len(dataset.testNegatives)):
-
                 user_test_items = dataset.testNegatives[user_index]
 
                 URM_test_negatives_builder.add_single_row(user_index, user_test_items, data=1.0)
 
-
             self.URM_test_negative = URM_test_negatives_builder.get_SparseMatrix()
 
-
-
-            self.URM_train, self.URM_validation = split_train_validation_leave_one_out_user_wise(self.URM_train_original.copy())
-
+            self.URM_train, self.URM_validation = split_train_validation_leave_one_out_user_wise(
+                self.URM_train_original.copy())
 
             data_dict = {
                 "URM_train_original": self.URM_train_original,
@@ -91,10 +83,6 @@ class PinterestICCVReader(object):
 
             save_data_dict(data_dict, pre_splitted_path, pre_splitted_filename)
 
-
         print("Dataset_Pinterest: Dataset loaded")
 
         print("N_items {}, n_users {}".format(self.URM_train.shape[1], self.URM_train.shape[0]))
-
-
-

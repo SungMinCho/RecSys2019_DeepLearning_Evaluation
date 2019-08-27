@@ -6,7 +6,6 @@ Created on 30/10/18
 @author: Maurizio Ferrari Dacrema
 """
 
-
 import os
 import shutil
 import sys
@@ -14,8 +13,8 @@ import sys
 import numpy as np
 from scipy import sparse
 
-
 import seaborn as sn
+
 sn.set()
 
 import pandas as pd
@@ -26,6 +25,8 @@ from tensorflow.contrib.layers import apply_regularization, l2_regularizer
 import bottleneck as bn
 
 from VAE_CF_github.MultiVae_Dae import MultiDAE, MultiVAE
+
+
 # Data splitting procedure
 # Select 10K users as heldout users, 10K users as validation users, and the rest of the users for training
 # Use all the items from the training users as item set
@@ -33,12 +34,10 @@ from VAE_CF_github.MultiVae_Dae import MultiDAE, MultiVAE
 # Only keep items that are clicked on by at least 5 users
 
 
-
 def get_count(tp, id):
     playcount_groupbyid = tp[[id]].groupby(id, as_index=False)
     count = playcount_groupbyid.size()
     return count
-
 
 
 def filter_triplets(tp, min_uc=5, min_sc=0):
@@ -56,9 +55,6 @@ def filter_triplets(tp, min_uc=5, min_sc=0):
     # Update both usercount and itemcount after filtering
     usercount, itemcount = get_count(tp, 'userId'), get_count(tp, 'movieId')
     return tp, usercount, itemcount
-
-
-
 
 
 def split_train_test_proportion(data, test_prop=0.2):
@@ -95,20 +91,13 @@ def numerize(tp, profile2id, show2id):
     return pd.DataFrame(data={'uid': uid, 'sid': sid}, columns=['uid', 'sid'])
 
 
-
-
-
 def split_train_validation_test_VAE_CF(URM_dataframe, pro_dir):
-
-
     raw_data, user_activity, item_popularity = filter_triplets(URM_dataframe)
-
 
     sparsity = 1. * raw_data.shape[0] / (user_activity.shape[0] * item_popularity.shape[0])
 
     print("After filtering, there are %d watching events from %d users and %d movies (sparsity: %.3f%%)" %
           (raw_data.shape[0], user_activity.shape[0], item_popularity.shape[0], sparsity * 100))
-
 
     unique_uid = user_activity.index
 
@@ -124,14 +113,12 @@ def split_train_validation_test_VAE_CF(URM_dataframe, pro_dir):
     vd_users = unique_uid[(n_users - n_heldout_users * 2): (n_users - n_heldout_users)]
     te_users = unique_uid[(n_users - n_heldout_users):]
 
-
     train_plays = raw_data.loc[raw_data['userId'].isin(tr_users)]
 
     unique_sid = pd.unique(train_plays['movieId'])
 
     show2id = dict((sid, i) for (i, sid) in enumerate(unique_sid))
     profile2id = dict((pid, i) for (i, pid) in enumerate(unique_uid))
-
 
     if not os.path.exists(pro_dir):
         os.makedirs(pro_dir)
@@ -148,12 +135,7 @@ def split_train_validation_test_VAE_CF(URM_dataframe, pro_dir):
     test_plays = raw_data.loc[raw_data['userId'].isin(te_users)]
     test_plays = test_plays.loc[test_plays['movieId'].isin(unique_sid)]
 
-
     test_plays_tr, test_plays_te = split_train_test_proportion(test_plays)
-
-
-
-
 
     train_data = numerize(train_plays, profile2id, show2id)
     train_data.to_csv(os.path.join(pro_dir, 'train.csv'), index=False)
@@ -170,12 +152,7 @@ def split_train_validation_test_VAE_CF(URM_dataframe, pro_dir):
     test_data_te = numerize(test_plays_te, profile2id, show2id)
     test_data_te.to_csv(os.path.join(pro_dir, 'test_te.csv'), index=False)
 
-
-
     return train_data, vad_data_tr, vad_data_te, test_data_tr, test_data_te
-
-
-
 
 
 def load_train_data(csv_file, n_items):
@@ -184,7 +161,7 @@ def load_train_data(csv_file, n_items):
 
     rows, cols = tp['uid'], tp['sid']
     data = sparse.csr_matrix((np.ones_like(rows),
-                             (rows, cols)), dtype='float64',
+                              (rows, cols)), dtype='float64',
                              shape=(n_users, n_items))
     return data
 
@@ -200,18 +177,13 @@ def load_tr_te_data(csv_file_tr, csv_file_te, n_items):
     rows_te, cols_te = tp_te['uid'] - start_idx, tp_te['sid']
 
     data_tr = sparse.csr_matrix((np.ones_like(rows_tr),
-                             (rows_tr, cols_tr)), dtype='float64', shape=(end_idx - start_idx + 1, n_items))
+                                 (rows_tr, cols_tr)), dtype='float64', shape=(end_idx - start_idx + 1, n_items))
     data_te = sparse.csr_matrix((np.ones_like(rows_te),
-                             (rows_te, cols_te)), dtype='float64', shape=(end_idx - start_idx + 1, n_items))
+                                 (rows_te, cols_te)), dtype='float64', shape=(end_idx - start_idx + 1, n_items))
     return data_tr, data_te
 
 
-
-
-
 def load_data_VAE_CF(pro_dir):
-
-
     unique_sid = list()
 
     with open(os.path.join(pro_dir, 'unique_sid.txt'), 'r') as f:
@@ -220,30 +192,22 @@ def load_data_VAE_CF(pro_dir):
 
     n_items = len(unique_sid)
 
-
     train_data = load_train_data(os.path.join(pro_dir, 'train.csv'), n_items)
-
 
     vad_data_tr, vad_data_te = load_tr_te_data(os.path.join(pro_dir, 'validation_tr.csv'),
                                                os.path.join(pro_dir, 'validation_te.csv'), n_items)
-
 
     test_data_tr, test_data_te = load_tr_te_data(
         os.path.join(pro_dir, 'test_tr.csv'),
         os.path.join(pro_dir, 'test_te.csv'), n_items)
 
-
-
-
     return train_data, vad_data_tr, vad_data_te, test_data_tr, test_data_te, n_items
 
 
-
-import  scipy.sparse as sps
+import scipy.sparse as sps
 
 
 def offset_sparse_matrix_row(URM, offset_row):
-
     URM_coo = sps.coo_matrix(URM.copy())
 
     URM_coo.row += offset_row
@@ -251,11 +215,8 @@ def offset_sparse_matrix_row(URM, offset_row):
     return sps.csr_matrix((URM_coo.data, (URM_coo.row, URM_coo.col)))
 
 
-
-
-
 dataset = "movielens20m"
-#dataset = "movielens1m"
+# dataset = "movielens1m"
 
 
 if dataset == "movielens20m":
@@ -271,39 +232,29 @@ elif dataset == "movielens1m":
 
     DATA_DIR = '../data/Movielens1M/ml-1m/'
 
-    column_names = ["userId","movieId","rating","timestamp"]
-    raw_data = pd.read_csv(os.path.join(DATA_DIR, 'ratings.dat'), header = None, names = column_names, sep="::")
+    column_names = ["userId", "movieId", "rating", "timestamp"]
+    raw_data = pd.read_csv(os.path.join(DATA_DIR, 'ratings.dat'), header=None, names=column_names, sep="::")
 
     # binarize the data (only keep ratings >= 4)
     raw_data = raw_data[raw_data['rating'] > 3.5]
-
-
-
-
 
 output_directory = "../result_experiments/VAE_CF_{}/".format(dataset)
 
 if not os.path.exists(output_directory):
     os.makedirs(output_directory)
 
-
-
-
 try:
 
-    train_data, vad_data_tr, vad_data_te, test_data_tr, test_data_te, n_items = load_data_VAE_CF(output_directory + "split/")
+    train_data, vad_data_tr, vad_data_te, test_data_tr, test_data_te, n_items = load_data_VAE_CF(
+        output_directory + "split/")
 
 except:
 
     split_train_validation_test_VAE_CF(raw_data, output_directory + "split/")
-    train_data, vad_data_tr, vad_data_te, test_data_tr, test_data_te, n_items = load_data_VAE_CF(output_directory + "split/")
-
-
-
-
+    train_data, vad_data_tr, vad_data_te, test_data_tr, test_data_te, n_items = load_data_VAE_CF(
+        output_directory + "split/")
 
 from Base.Recommender_utils import reshapeSparse
-
 
 URM_train_all = sps.vstack([train_data, vad_data_tr, test_data_tr])
 
@@ -318,17 +269,6 @@ n_train_and_validation_users = URM_validation.shape[0]
 
 URM_validation = reshapeSparse(URM_validation, URM_train_all_shape)
 URM_test = offset_sparse_matrix_row(test_data_te, n_train_and_validation_users)
-
-
-
-
-
-
-
-
-
-
-
 
 ##############################################################################################################################################################
 ##### Set up training hyperparameters
@@ -351,8 +291,6 @@ batch_size_vad = 2000
 total_anneal_steps = 200000
 # largest annealing parameter
 anneal_cap = 0.2
-
-
 
 
 ##### Evaluate function: Normalized discounted cumulative gain (NDCG@k) and Recall@k
@@ -394,34 +332,12 @@ def Recall_at_k_batch(X_pred, heldout_batch, k=100):
     return recall
 
 
-
-
-
 ##############################################################################################################################################################
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 ############################ Train a Multi-VAE^{PR}
 
 p_dims = [200, 600, n_items]
-
-
 
 tf.reset_default_graph()
 vae = MultiVAE(p_dims, lam=0.0, random_seed=98765)
@@ -434,17 +350,13 @@ ndcg_summary = tf.summary.scalar('ndcg_at_k_validation', ndcg_var)
 ndcg_dist_summary = tf.summary.histogram('ndcg_at_k_hist_validation', ndcg_dist_var)
 merged_valid = tf.summary.merge([ndcg_summary, ndcg_dist_summary])
 
-
-
-
 arch_str = "I-%s-I" % ('-'.join([str(d) for d in vae.dims[1:-1]]))
-
 
 # log_dir = '/volmount/log/ml-20m/VAE_anneal{}K_cap{:1.1E}/{}'.format(
 #     total_anneal_steps/1000, anneal_cap, arch_str)
 
 log_dir = output_directory + 'log/VAE_anneal{}K_cap{:1.1E}/{}'.format(
-    total_anneal_steps/1000, anneal_cap, arch_str)
+    total_anneal_steps / 1000, anneal_cap, arch_str)
 
 if os.path.exists(log_dir):
     shutil.rmtree(log_dir)
@@ -452,29 +364,22 @@ if os.path.exists(log_dir):
 print("log directory: %s" % log_dir)
 summary_writer = tf.summary.FileWriter(log_dir, graph=tf.get_default_graph())
 
-
-
 # chkpt_dir = '/volmount/chkpt/ml-20m/VAE_anneal{}K_cap{:1.1E}/{}'.format(
 #     total_anneal_steps/1000, anneal_cap, arch_str)
 
 chkpt_dir = output_directory + 'chkpt/VAE_anneal{}K_cap{:1.1E}/{}'.format(
-    total_anneal_steps/1000, anneal_cap, arch_str)
+    total_anneal_steps / 1000, anneal_cap, arch_str)
 
 if not os.path.isdir(chkpt_dir):
     os.makedirs(chkpt_dir)
 
 print("chkpt directory: %s" % chkpt_dir)
 
-
 n_epochs = 0
-
-
-
 
 ndcgs_vad = []
 
 with tf.Session() as sess:
-
     init = tf.global_variables_initializer()
     sess.run(init)
 
@@ -523,7 +428,7 @@ with tf.Session() as sess:
                 X = X.toarray()
             X = X.astype('float32')
 
-            pred_val = sess.run(logits_var, feed_dict={vae.input_ph: X} )
+            pred_val = sess.run(logits_var, feed_dict={vae.input_ph: X})
             # exclude examples from training and validation (if any)
             pred_val[X.nonzero()] = -np.inf
             ndcg_dist.append(NDCG_binary_at_k_batch(pred_val, vad_data_te[idxlist_vad[st_idx:end_idx]]))
@@ -541,8 +446,6 @@ with tf.Session() as sess:
             saver.save(sess, '{}/model'.format(chkpt_dir))
             best_ndcg = ndcg_
 
-
-
 # plt.figure(figsize=(12, 3))
 # plt.plot(ndcgs_vad)
 # plt.ylabel("Validation NDCG@100")
@@ -559,8 +462,6 @@ idxlist_test = list(range(N_test))
 
 batch_size_test = 2000
 
-
-
 tf.reset_default_graph()
 vae = MultiVAE(p_dims, lam=0.0)
 saver, logits_var, _, _, _ = vae.build_graph()
@@ -569,9 +470,8 @@ saver, logits_var, _, _, _ = vae.build_graph()
 
 
 chkpt_dir = output_directory + 'chkpt/VAE_anneal{}K_cap{:1.1E}/{}'.format(
-    total_anneal_steps/1000, anneal_cap, arch_str)
+    total_anneal_steps / 1000, anneal_cap, arch_str)
 print("chkpt directory: %s" % chkpt_dir)
-
 
 n100_list, r20_list, r50_list = [], [], []
 
@@ -593,23 +493,15 @@ with tf.Session() as sess:
         r20_list.append(Recall_at_k_batch(pred_val, test_data_te[idxlist_test[st_idx:end_idx]], k=20))
         r50_list.append(Recall_at_k_batch(pred_val, test_data_te[idxlist_test[st_idx:end_idx]], k=50))
 
-
 n100_list = np.concatenate(n100_list)
 r20_list = np.concatenate(r20_list)
 r50_list = np.concatenate(r50_list)
-
 
 print("Test NDCG@100=%.5f (%.5f)" % (np.mean(n100_list), np.std(n100_list) / np.sqrt(len(n100_list))))
 print("Test Recall@20=%.5f (%.5f)" % (np.mean(r20_list), np.std(r20_list) / np.sqrt(len(r20_list))))
 print("Test Recall@50=%.5f (%.5f)" % (np.mean(r50_list), np.std(r50_list) / np.sqrt(len(r50_list))))
 
-
-
-
-
-
 ########################## MY wrapper
-
 
 
 import numpy as np
@@ -619,7 +511,6 @@ import scipy.sparse as sps
 
 
 class VAE_CF_RecommenderWrapper(BaseRecommender):
-
     RECOMMENDER_NAME = "VAE_CF_RecommenderWrapper"
 
     def __init__(self, URM_train, chkpt_dir, test_data_tr):
@@ -632,58 +523,39 @@ class VAE_CF_RecommenderWrapper(BaseRecommender):
         self._compute_item_score = self._compute_score_VAE
         self.test_data_tr = sps.csr_matrix(test_data_tr)
 
-
     def _remove_seen_on_scores(self, user_id, scores):
-
         seen = self.test_data_tr.indices[self.test_data_tr.indptr[user_id]:self.test_data_tr.indptr[user_id + 1]]
 
         scores[seen] = -np.inf
         return scores
 
-
     def _compute_score_VAE(self, user_id):
-
-
         X = test_data_tr[user_id]
 
         if sparse.isspmatrix(X):
             X = X.toarray()
         X = X.astype('float32')
 
-
         pred_val = self.sess.run(logits_var, feed_dict={vae.input_ph: X})
 
         pred_val[X.nonzero()] = -np.inf
 
-
         return pred_val
 
-
-
     def fit(self):
-
         self.sess = tf.Session()
         saver.restore(self.sess, '{}/model'.format(self.chkpt_dir))
-
-
-
-
 
 
 recommender = VAE_CF_RecommenderWrapper(train_data, chkpt_dir, test_data_tr)
 recommender.fit()
 
-
-
-
-
 from Base.Evaluation.metrics import recall, ndcg
-
 
 n100_list, r20_list, r50_list = [], [], []
 
 for user_index in range(len(idxlist_test)):
-    #end_idx = min(st_idx + batch_size_test, N_test)
+    # end_idx = min(st_idx + batch_size_test, N_test)
     # X = test_data_tr[idxlist_test[st_idx:end_idx]]
     #
     # if sparse.isspmatrix(X):
@@ -724,53 +596,21 @@ for user_index in range(len(idxlist_test)):
     his_ndcg = NDCG_binary_at_k_batch(pred_val, pos_items_sparse, k=100)[0]
     my_ndcg = ndcg(recommended_items, pos_items_array)
 
-
-
     if not np.allclose(my_ndcg, his_ndcg, atol=0.0001):
         pass
-
 
 n100_list = np.concatenate(n100_list)
 r20_list = np.concatenate(r20_list)
 r50_list = np.concatenate(r50_list)
 
-
 print("Test NDCG@100=%.5f (%.5f)" % (np.mean(n100_list), np.std(n100_list) / np.sqrt(len(n100_list))))
 print("Test Recall@20=%.5f (%.5f)" % (np.mean(r20_list), np.std(r20_list) / np.sqrt(len(r20_list))))
 print("Test Recall@50=%.5f (%.5f)" % (np.mean(r50_list), np.std(r50_list) / np.sqrt(len(r50_list))))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 from Base.Evaluation.Evaluator import EvaluatorHoldout
 
 evaluator = EvaluatorHoldout(test_data_te, cutoff_list=[20, 50, 100])
 
 results_dict, results_run_string = evaluator.evaluateRecommender(recommender)
-
 
 print(results_run_string)

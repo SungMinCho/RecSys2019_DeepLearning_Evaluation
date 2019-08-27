@@ -17,9 +17,9 @@ train_X = data[idx]
 test_X = data[~idx]
 logging.info('initializing sdae model')
 
-model = VariationalAutoEncoder(input_dim=8000, dims=[200, 100], z_dim=50, 
-	activations=['sigmoid','sigmoid'], epoch=[50, 50], 
-	noise='mask-0.3' ,loss='cross-entropy', lr=0.01, batch_size=128, print_step=1)
+model = VariationalAutoEncoder(input_dim=8000, dims=[200, 100], z_dim=50,
+                               activations=['sigmoid', 'sigmoid'], epoch=[50, 50],
+                               noise='mask-0.3', loss='cross-entropy', lr=0.01, batch_size=128, print_step=1)
 
 logging.info('fitting data starts...')
 model.fit(train_X, test_X)

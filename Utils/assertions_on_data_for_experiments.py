@@ -6,8 +6,8 @@ Created on 15/12/2018
 @author: Maurizio Ferrari Dacrema
 """
 
-
 import numpy as np
+
 
 def assert_implicit_data(URM_list):
     """
@@ -17,12 +17,10 @@ def assert_implicit_data(URM_list):
     """
 
     for URM in URM_list:
-
-        assert np.all(URM.data == np.ones_like(URM.data)), "assert_implicit_data: URM is not implicit as it contains data other than 1.0"
-
+        assert np.all(URM.data == np.ones_like(
+            URM.data)), "assert_implicit_data: URM is not implicit as it contains data other than 1.0"
 
     print("Assertion assert_implicit_data: Passed")
-
 
 
 def assert_disjoint_matrices(URM_list):
@@ -49,9 +47,8 @@ def assert_disjoint_matrices(URM_list):
         else:
             URM_implicit_global += URM_implicit
 
-
     assert cumulative_nnz == URM_implicit_global.nnz, \
-        "assert_disjoint_matrices: URM in list are not disjoint, {} data points are in more than one URM".format(cumulative_nnz-URM_implicit_global.nnz)
-
+        "assert_disjoint_matrices: URM in list are not disjoint, {} data points are in more than one URM".format(
+            cumulative_nnz - URM_implicit_global.nnz)
 
     print("Assertion assert_disjoint_matrices: Passed")

@@ -6,10 +6,8 @@ Created on 18/12/18
 @author: Maurizio Ferrari Dacrema
 """
 
-
 from Base.BaseRecommender import BaseRecommender
 from Base.Incremental_Training_Early_Stopping import Incremental_Training_Early_Stopping
-
 
 import numpy as np
 import scipy.sparse as sps
@@ -21,18 +19,19 @@ from keras.layers import Embedding, Input, Dense, Reshape, Flatten, Dropout, Con
 from keras.optimizers import Adagrad, Adam, SGD, RMSprop
 
 
-
-def MLP_get_model(num_users, num_items, layers = [20,10], reg_layers=[0,0]):
+def MLP_get_model(num_users, num_items, layers=[20, 10], reg_layers=[0, 0]):
     assert len(layers) == len(reg_layers)
-    num_layer = len(layers) #Number of layers in the MLP
+    num_layer = len(layers)  # Number of layers in the MLP
     # Input variables
-    user_input = Input(shape=(1,), dtype='int32', name = 'user_input')
-    item_input = Input(shape=(1,), dtype='int32', name = 'item_input')
+    user_input = Input(shape=(1,), dtype='int32', name='user_input')
+    item_input = Input(shape=(1,), dtype='int32', name='item_input')
 
-    MLP_Embedding_User = Embedding(input_dim = num_users, output_dim = int(layers[0]/2), name = 'user_embedding',
-                                   embeddings_initializer = 'random_normal', embeddings_regularizer = l2(reg_layers[0]), input_length=1)
-    MLP_Embedding_Item = Embedding(input_dim = num_items, output_dim = int(layers[0]/2), name = 'item_embedding',
-                                   embeddings_initializer = 'random_normal', embeddings_regularizer = l2(reg_layers[0]), input_length=1)
+    MLP_Embedding_User = Embedding(input_dim=num_users, output_dim=int(layers[0] / 2), name='user_embedding',
+                                   embeddings_initializer='random_normal', embeddings_regularizer=l2(reg_layers[0]),
+                                   input_length=1)
+    MLP_Embedding_Item = Embedding(input_dim=num_items, output_dim=int(layers[0] / 2), name='item_embedding',
+                                   embeddings_initializer='random_normal', embeddings_regularizer=l2(reg_layers[0]),
+                                   input_length=1)
 
     # Crucial to flatten an embedding vector!
     user_latent = Flatten()(MLP_Embedding_User(user_input))
@@ -43,11 +42,11 @@ def MLP_get_model(num_users, num_items, layers = [20,10], reg_layers=[0,0]):
 
     # MLP layers
     for idx in range(1, num_layer):
-        layer = Dense(layers[idx], kernel_regularizer = l2(reg_layers[idx]), activation='relu', name = 'layer%d' %idx)
+        layer = Dense(layers[idx], kernel_regularizer=l2(reg_layers[idx]), activation='relu', name='layer%d' % idx)
         vector = layer(vector)
 
     # Final prediction layer
-    prediction = Dense(1, activation='sigmoid', kernel_initializer='lecun_uniform', name = 'prediction')(vector)
+    prediction = Dense(1, activation='sigmoid', kernel_initializer='lecun_uniform', name='prediction')(vector)
 
     model = Model(inputs=[user_input, item_input],
                   outputs=prediction)
@@ -55,15 +54,17 @@ def MLP_get_model(num_users, num_items, layers = [20,10], reg_layers=[0,0]):
     return model
 
 
-def GMF_get_model(num_users, num_items, latent_dim, regs=[0,0]):
+def GMF_get_model(num_users, num_items, latent_dim, regs=[0, 0]):
     # Input variables
-    user_input = Input(shape=(1,), dtype='int32', name = 'user_input')
-    item_input = Input(shape=(1,), dtype='int32', name = 'item_input')
+    user_input = Input(shape=(1,), dtype='int32', name='user_input')
+    item_input = Input(shape=(1,), dtype='int32', name='item_input')
 
-    MF_Embedding_User = Embedding(input_dim = num_users, output_dim = latent_dim, name = 'user_embedding',
-                                  embeddings_initializer = 'random_normal', embeddings_regularizer = l2(regs[0]), input_length=1)
-    MF_Embedding_Item = Embedding(input_dim = num_items, output_dim = latent_dim, name = 'item_embedding',
-                                  embeddings_initializer = 'random_normal', embeddings_regularizer = l2(regs[1]), input_length=1)
+    MF_Embedding_User = Embedding(input_dim=num_users, output_dim=latent_dim, name='user_embedding',
+                                  embeddings_initializer='random_normal', embeddings_regularizer=l2(regs[0]),
+                                  input_length=1)
+    MF_Embedding_Item = Embedding(input_dim=num_items, output_dim=latent_dim, name='item_embedding',
+                                  embeddings_initializer='random_normal', embeddings_regularizer=l2(regs[1]),
+                                  input_length=1)
 
     # Crucial to flatten an embedding vector!
     user_latent = Flatten()(MF_Embedding_User(user_input))
@@ -73,56 +74,59 @@ def GMF_get_model(num_users, num_items, latent_dim, regs=[0,0]):
     predict_vector = Multiply()([user_latent, item_latent])
 
     # Final prediction layer
-    prediction = Dense(1, activation='sigmoid', kernel_initializer='lecun_uniform', name = 'prediction')(predict_vector)
-
-    model = Model(inputs=[user_input, item_input],
-                outputs=prediction)
-
-    return model
-
-
-def NeuCF_get_model(num_users, num_items, mf_dim=10, layers=[10], reg_layers=[0], reg_mf=0.0):
-    assert len(layers) == len(reg_layers)
-    num_layer = len(layers) #Number of layers in the MLP
-    # Input variables
-    user_input = Input(shape=(1,), dtype='int32', name = 'user_input')
-    item_input = Input(shape=(1,), dtype='int32', name = 'item_input')
-
-    # Embedding layer
-    MF_Embedding_User = Embedding(input_dim = num_users, output_dim = mf_dim, name = 'mf_embedding_user',
-                                  embeddings_initializer = 'random_normal', embeddings_regularizer = l2(reg_mf), input_length=1)
-    MF_Embedding_Item = Embedding(input_dim = num_items, output_dim = mf_dim, name = 'mf_embedding_item',
-                                  embeddings_initializer = 'random_normal', embeddings_regularizer = l2(reg_mf), input_length=1)
-
-    MLP_Embedding_User = Embedding(input_dim = num_users, output_dim = int(layers[0]/2), name = "mlp_embedding_user",
-                                   embeddings_initializer = 'random_normal', embeddings_regularizer = l2(reg_layers[0]), input_length=1)
-    MLP_Embedding_Item = Embedding(input_dim = num_items, output_dim = int(layers[0]/2), name = 'mlp_embedding_item',
-                                   embeddings_initializer = 'random_normal', embeddings_regularizer = l2(reg_layers[0]), input_length=1)
-
-    # MF part
-    mf_user_latent = Flatten()(MF_Embedding_User(user_input))
-    mf_item_latent = Flatten()(MF_Embedding_Item(item_input))
-    mf_vector = Multiply()([mf_user_latent, mf_item_latent]) # element-wise multiply
-
-    # MLP part
-    mlp_user_latent = Flatten()(MLP_Embedding_User(user_input))
-    mlp_item_latent = Flatten()(MLP_Embedding_Item(item_input))
-    mlp_vector = Concatenate()([mlp_user_latent, mlp_item_latent])
-    for idx in range(1, num_layer):
-        layer = Dense(layers[idx], kernel_regularizer= l2(reg_layers[idx]), activation='relu', name="layer%d" %idx)
-        mlp_vector = layer(mlp_vector)
-
-    # Concatenate MF and MLP parts
-    predict_vector = Concatenate()([mf_vector, mlp_vector])
-
-    # Final prediction layer
-    prediction = Dense(1, activation='sigmoid', kernel_initializer='lecun_uniform', name = "prediction")(predict_vector)
+    prediction = Dense(1, activation='sigmoid', kernel_initializer='lecun_uniform', name='prediction')(predict_vector)
 
     model = Model(inputs=[user_input, item_input],
                   outputs=prediction)
 
     return model
 
+
+def NeuCF_get_model(num_users, num_items, mf_dim=10, layers=[10], reg_layers=[0], reg_mf=0.0):
+    assert len(layers) == len(reg_layers)
+    num_layer = len(layers)  # Number of layers in the MLP
+    # Input variables
+    user_input = Input(shape=(1,), dtype='int32', name='user_input')
+    item_input = Input(shape=(1,), dtype='int32', name='item_input')
+
+    # Embedding layer
+    MF_Embedding_User = Embedding(input_dim=num_users, output_dim=mf_dim, name='mf_embedding_user',
+                                  embeddings_initializer='random_normal', embeddings_regularizer=l2(reg_mf),
+                                  input_length=1)
+    MF_Embedding_Item = Embedding(input_dim=num_items, output_dim=mf_dim, name='mf_embedding_item',
+                                  embeddings_initializer='random_normal', embeddings_regularizer=l2(reg_mf),
+                                  input_length=1)
+
+    MLP_Embedding_User = Embedding(input_dim=num_users, output_dim=int(layers[0] / 2), name="mlp_embedding_user",
+                                   embeddings_initializer='random_normal', embeddings_regularizer=l2(reg_layers[0]),
+                                   input_length=1)
+    MLP_Embedding_Item = Embedding(input_dim=num_items, output_dim=int(layers[0] / 2), name='mlp_embedding_item',
+                                   embeddings_initializer='random_normal', embeddings_regularizer=l2(reg_layers[0]),
+                                   input_length=1)
+
+    # MF part
+    mf_user_latent = Flatten()(MF_Embedding_User(user_input))
+    mf_item_latent = Flatten()(MF_Embedding_Item(item_input))
+    mf_vector = Multiply()([mf_user_latent, mf_item_latent])  # element-wise multiply
+
+    # MLP part
+    mlp_user_latent = Flatten()(MLP_Embedding_User(user_input))
+    mlp_item_latent = Flatten()(MLP_Embedding_Item(item_input))
+    mlp_vector = Concatenate()([mlp_user_latent, mlp_item_latent])
+    for idx in range(1, num_layer):
+        layer = Dense(layers[idx], kernel_regularizer=l2(reg_layers[idx]), activation='relu', name="layer%d" % idx)
+        mlp_vector = layer(mlp_vector)
+
+    # Concatenate MF and MLP parts
+    predict_vector = Concatenate()([mf_vector, mlp_vector])
+
+    # Final prediction layer
+    prediction = Dense(1, activation='sigmoid', kernel_initializer='lecun_uniform', name="prediction")(predict_vector)
+
+    model = Model(inputs=[user_input, item_input],
+                  outputs=prediction)
+
+    return model
 
 
 def load_pretrain_model(model, gmf_model, mlp_model, num_layers):
@@ -140,20 +144,20 @@ def load_pretrain_model(model, gmf_model, mlp_model, num_layers):
 
     # MLP layers
     for i in range(1, num_layers):
-        mlp_layer_weights = mlp_model.get_layer('layer%d' %i).get_weights()
-        model.get_layer('layer%d' %i).set_weights(mlp_layer_weights)
+        mlp_layer_weights = mlp_model.get_layer('layer%d' % i).get_weights()
+        model.get_layer('layer%d' % i).set_weights(mlp_layer_weights)
 
     # Prediction weights
     gmf_prediction = gmf_model.get_layer('prediction').get_weights()
     mlp_prediction = mlp_model.get_layer('prediction').get_weights()
     new_weights = np.concatenate((gmf_prediction[0], mlp_prediction[0]), axis=0)
     new_b = gmf_prediction[1] + mlp_prediction[1]
-    model.get_layer('prediction').set_weights([0.5*new_weights, 0.5*new_b])
+    model.get_layer('prediction').set_weights([0.5 * new_weights, 0.5 * new_b])
     return model
 
 
 def get_train_instances(train, num_negatives, num_items):
-    user_input, item_input, labels = [],[],[]
+    user_input, item_input, labels = [], [], []
     num_users = train.shape[0]
     for (u, i) in train.keys():
         # positive instance
@@ -163,7 +167,7 @@ def get_train_instances(train, num_negatives, num_items):
         # negative instances
         for t in range(num_negatives):
             j = np.random.randint(num_items)
-            while (u, j) in train.keys():#train.has_key((u, j)):
+            while (u, j) in train.keys():  # train.has_key((u, j)):
                 j = np.random.randint(num_items)
             user_input.append(u)
             item_input.append(j)
@@ -171,9 +175,7 @@ def get_train_instances(train, num_negatives, num_items):
     return user_input, item_input, labels
 
 
-
 def set_learner(model, learning_rate, learner):
-
     if learner.lower() == "adagrad":
         model.compile(optimizer=Adagrad(lr=learning_rate), loss='binary_crossentropy')
     elif learner.lower() == "rmsprop":
@@ -187,17 +189,13 @@ def set_learner(model, learning_rate, learner):
 
 
 def deep_clone_model(source_model):
-
     destination_model = clone_model(source_model)
     destination_model.set_weights(source_model.get_weights())
 
     return destination_model
 
 
-
 class NeuMF_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stopping):
-
-
     RECOMMENDER_NAME = "NeuMF_RecommenderWrapper"
 
     def __init__(self, URM_train):
@@ -208,7 +206,6 @@ class NeuMF_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stopp
 
         self._item_indices = np.arange(0, self.n_items, dtype=np.int)
         self._user_ones_vector = np.ones_like(self._item_indices)
-
 
     def _compute_item_score(self, user_id_array, items_to_compute=None):
 
@@ -221,18 +218,15 @@ class NeuMF_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stopp
             # The prediction requires a list of two arrays user_id, item_id of equal length
             # To compute the recommendations for a single user, we must provide its index as many times as the
             # number of items
-            item_score_user = self.model.predict([self._user_ones_vector*user_id, self._item_indices],
+            item_score_user = self.model.predict([self._user_ones_vector * user_id, self._item_indices],
                                                  batch_size=100, verbose=0)
-
 
             if items_to_compute is not None:
                 item_scores[user_index, items_to_compute] = item_score_user.ravel()[items_to_compute]
             else:
                 item_scores[user_index, :] = item_score_user.ravel()
 
-
         return item_scores
-
 
     def get_early_stopping_final_epochs_dict(self):
         """
@@ -245,25 +239,22 @@ class NeuMF_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stopp
 
         return {"epochs": self.epochs_best, "epochs_gmf": self.epochs_best_gmf, "epochs_mlp": self.epochs_best_mlp}
 
-
-
-
     def fit(self,
-            epochs = 100,
+            epochs=100,
             epochs_gmf=100,
             epochs_mlp=100,
-            batch_size = 256,
-            num_factors = 8,
-            layers = [64,32,16,8],
-            reg_mf = 0.0,
-            reg_layers = [0,0,0,0],
-            num_negatives = 4,
-            learning_rate = 1e-3,
-            learning_rate_pretrain = 1e-3,
-            learner = 'sgd',
-            learner_pretrain = 'adam',
-            pretrain = True,
-            root_folder_pretrain = None,
+            batch_size=256,
+            num_factors=8,
+            layers=[64, 32, 16, 8],
+            reg_mf=0.0,
+            reg_layers=[0, 0, 0, 0],
+            num_negatives=4,
+            learning_rate=1e-3,
+            learning_rate_pretrain=1e-3,
+            learner='sgd',
+            learner_pretrain='adam',
+            pretrain=True,
+            root_folder_pretrain=None,
             **earlystopping_kwargs):
         """
 
@@ -282,7 +273,6 @@ class NeuMF_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stopp
         :param do_pretrain:
         :return:
         """
-
 
         self.batch_size = batch_size
         self.mf_dim = num_factors
@@ -316,7 +306,7 @@ class NeuMF_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stopp
             self._best_model = deep_clone_model(self.model)
 
             self._train_with_early_stopping(epochs_gmf,
-                                            algorithm_name = self.RECOMMENDER_NAME,
+                                            algorithm_name=self.RECOMMENDER_NAME,
                                             **earlystopping_kwargs)
 
             self.epochs_best_gmf = self.epochs_best
@@ -327,8 +317,6 @@ class NeuMF_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stopp
 
             self.gmf_model = deep_clone_model(self._best_model)
 
-
-
             print("NeuMF_RecommenderWrapper: Pretraining MLP...")
 
             self.model = MLP_get_model(self.n_users, self.n_items, self.layers, self.reg_layers)
@@ -337,7 +325,7 @@ class NeuMF_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stopp
             self._best_model = deep_clone_model(self.model)
 
             self._train_with_early_stopping(epochs_mlp,
-                                            algorithm_name = self.RECOMMENDER_NAME,
+                                            algorithm_name=self.RECOMMENDER_NAME,
                                             **earlystopping_kwargs)
 
             self.epochs_best_mlp = self.epochs_best
@@ -348,45 +336,33 @@ class NeuMF_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stopp
 
             self.mlp_model = deep_clone_model(self._best_model)
 
-
-
-
-
         # Build model
         self.model = NeuCF_get_model(self.n_users, self.n_items, self.mf_dim, self.layers, self.reg_layers, self.reg_mf)
         self.model = set_learner(self.model, learning_rate, learner)
-
 
         # Load pretrain model
         if pretrain:
             self.model = load_pretrain_model(self.model, self.gmf_model, self.mlp_model, len(layers))
             print("NeuMF_RecommenderWrapper: Load pretrained GMF and MLP models.")
 
-
         print("NeuMF_RecommenderWrapper: Training NeuCF...")
 
         self._best_model = deep_clone_model(self.model)
 
         self._train_with_early_stopping(epochs,
-                                        algorithm_name = self.RECOMMENDER_NAME,
+                                        algorithm_name=self.RECOMMENDER_NAME,
                                         **earlystopping_kwargs)
-
 
         print("NeuMF_RecommenderWrapper: Tranining complete")
 
         self.model = deep_clone_model(self._best_model)
 
-
-
-
     def _prepare_model_for_validation(self):
         pass
-
 
     def _update_best_model(self):
         # Keras only clones the structure of the model, not the weights
         self._best_model = deep_clone_model(self.model)
-
 
     def _run_epoch(self, currentEpoch):
 
@@ -394,32 +370,13 @@ class NeuMF_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stopp
         user_input, item_input, labels = get_train_instances(self._train, self.num_negatives, self.n_items)
 
         # Training
-        hist = self.model.fit([np.array(user_input), np.array(item_input)], #input
-                         np.array(labels), # labels
-                         batch_size=self.batch_size, epochs=1, verbose=0, shuffle=True)
+        hist = self.model.fit([np.array(user_input), np.array(item_input)],  # input
+                              np.array(labels),  # labels
+                              batch_size=self.batch_size, epochs=1, verbose=0, shuffle=True)
 
-        print("NeuMF_RecommenderWrapper: Epoch {}, loss {:.2E}".format(currentEpoch+1, hist.history['loss'][0]))
+        print("NeuMF_RecommenderWrapper: Epoch {}, loss {:.2E}".format(currentEpoch + 1, hist.history['loss'][0]))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    def saveModel(self, folder_path, file_name = None):
+    def saveModel(self, folder_path, file_name=None):
 
         import pickle
 
@@ -443,13 +400,9 @@ class NeuMF_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stopp
                     open(folder_path + file_name, "wb"),
                     protocol=pickle.HIGHEST_PROTOCOL)
 
-
         print("{}: Saving complete".format(self.RECOMMENDER_NAME, folder_path + file_name))
 
-
-
-
-    def loadModel(self, folder_path, file_name = None):
+    def loadModel(self, folder_path, file_name=None):
 
         import pickle
 
@@ -458,17 +411,12 @@ class NeuMF_RecommenderWrapper(BaseRecommender, Incremental_Training_Early_Stopp
 
         print("{}: Loading model from file '{}'".format(self.RECOMMENDER_NAME, folder_path + file_name))
 
-
         data_dict = pickle.load(open(folder_path + file_name, "rb"))
 
         for attrib_name in data_dict.keys():
-             self.__setattr__(attrib_name, data_dict[attrib_name])
-
-
+            self.__setattr__(attrib_name, data_dict[attrib_name])
 
         self.model = NeuCF_get_model(self.n_users, self.n_items, self.mf_dim, self.layers, self.reg_layers, self.reg_mf)
         self.model.load_weights(folder_path + file_name + "_weights")
 
-
         print("{}: Loading complete".format(self.RECOMMENDER_NAME))
-

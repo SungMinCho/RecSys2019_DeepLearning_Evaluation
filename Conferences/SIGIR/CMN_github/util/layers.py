@@ -38,11 +38,11 @@ def _bpr_loss(positive, negative, name=None):
         return tf.reduce_mean(loss, name=scope)
 
 
-
 class LossLayer(snt.AbstractModule):
     """
     Loss Function Wrapper. Applies regularization from GraphKeys.REGULARIZATION_LOSSES
     """
+
     def __init__(self, name='Loss'):
         """
         Wrapper Function for loss with l1/l2 regularization
@@ -102,6 +102,7 @@ class DenseLayer(snt.AbstractModule):
     """
     Simple dense layer with an activation function
     """
+
     def __init__(self, output_size, add_bias=True, activation_fn=None,
                  initializers=None, partitioners=None, regularizers=None,
                  name="DenseLayer"):

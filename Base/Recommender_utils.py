@@ -10,6 +10,7 @@ import scipy.sparse as sps
 import time
 import os
 
+
 def check_matrix(X, format='csc', dtype=np.float32):
     """
     This function takes a matrix as input and transforms it into the specified format.
@@ -21,7 +22,6 @@ def check_matrix(X, format='csc', dtype=np.float32):
     :param dtype:
     :return:
     """
-
 
     if format == 'csc' and not isinstance(X, sps.csc_matrix):
         return X.tocsc().astype(dtype)
@@ -45,7 +45,7 @@ def check_matrix(X, format='csc', dtype=np.float32):
         return X.astype(dtype)
 
 
-def similarityMatrixTopK(item_weights, k=100, verbose = False):
+def similarityMatrixTopK(item_weights, k=100, verbose=False):
     """
     The function selects the TopK most similar elements, column-wise
 
@@ -78,31 +78,27 @@ def similarityMatrixTopK(item_weights, k=100, verbose = False):
     else:
         column_row_index = np.arange(nitems, dtype=np.int32)
 
-
-
     for item_idx in range(nitems):
 
         cols_indptr.append(len(data))
 
         if sparse_weights:
             start_position = item_weights.indptr[item_idx]
-            end_position = item_weights.indptr[item_idx+1]
+            end_position = item_weights.indptr[item_idx + 1]
 
             column_data = item_weights.data[start_position:end_position]
             column_row_index = item_weights.indices[start_position:end_position]
 
         else:
-            column_data = item_weights[:,item_idx]
+            column_data = item_weights[:, item_idx]
 
-
-        non_zero_data = column_data!=0
+        non_zero_data = column_data != 0
 
         idx_sorted = np.argsort(column_data[non_zero_data])  # sort by column
         top_k_idx = idx_sorted[-k:]
 
         data.extend(column_data[non_zero_data][top_k_idx])
         rows_indices.extend(column_row_index[non_zero_data][top_k_idx])
-
 
     cols_indptr.append(len(data))
 
@@ -115,13 +111,10 @@ def similarityMatrixTopK(item_weights, k=100, verbose = False):
     return W_sparse
 
 
-
 def reshapeSparse(sparseMatrix, newShape):
-
     if sparseMatrix.shape[0] > newShape[0] or sparseMatrix.shape[1] > newShape[1]:
         ValueError("New shape cannot be smaller than SparseMatrix. SparseMatrix shape is: {}, newShape is {}".format(
             sparseMatrix.shape, newShape))
-
 
     sparseMatrix = sparseMatrix.tocoo()
     newMatrix = sps.csr_matrix((sparseMatrix.data, (sparseMatrix.row, sparseMatrix.col)), shape=newShape)

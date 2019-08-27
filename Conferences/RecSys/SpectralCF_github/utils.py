@@ -2,16 +2,17 @@ import numpy as np
 
 
 def normalize_adj(adj):
-    s = 1/adj.sum(1)
+    s = 1 / adj.sum(1)
     s[np.isnan(s)] = 0.0
     s[np.isinf(s)] = 0.0
-    d = np.diag(s)#np.diag(np.power(np.array(adj.sum(1)), -1).flatten(), 0)
+    d = np.diag(s)  # np.diag(np.power(np.array(adj.sum(1)), -1).flatten(), 0)
     a_norm = d.dot(adj)
     return a_norm
 
 
 def recall(rank, ground_truth, N):
     return len(set(rank[:N]) & set(ground_truth)) / float(len(set(ground_truth)))
+
 
 def precision_at_k(r, k):
     """Score is precision @ k
@@ -26,7 +27,7 @@ def precision_at_k(r, k):
     return np.mean(r)
 
 
-def average_precision(r,cut):
+def average_precision(r, cut):
     """Score is average precision (area under PR curve)
     Relevance is binary (nonzero is relevant).
     Returns:
@@ -36,7 +37,7 @@ def average_precision(r,cut):
     out = [precision_at_k(r, k + 1) for k in range(cut) if r[k]]
     if not out:
         return 0.
-    return np.sum(out)/float(min(cut, np.sum(r)))
+    return np.sum(out) / float(min(cut, np.sum(r)))
 
 
 def mean_average_precision(rs):
@@ -89,5 +90,3 @@ def F1(pre, rec):
         return (2.0 * pre * rec) / (pre + rec)
     else:
         return 0.
-
-

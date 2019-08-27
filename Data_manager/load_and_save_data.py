@@ -12,9 +12,7 @@ from pandas import DataFrame
 import pandas as pd
 
 
-
 def save_data_dict(data_dict, splitted_data_path, file_name_prefix):
-
     pickle_attribute_name_to_path_dict = {}
     pickle_attribute_name_to_type_dict = {}
 
@@ -27,7 +25,6 @@ def save_data_dict(data_dict, splitted_data_path, file_name_prefix):
             data_dict["ICM_dict" + "_" + ICM_name] = ICM_object
 
         del data_dict["ICM_dict"]
-
 
     for attrib_name in data_dict:
 
@@ -47,11 +44,10 @@ def save_data_dict(data_dict, splitted_data_path, file_name_prefix):
             pickle_attribute_name_to_type_dict[attrib_name] = sps.spmatrix
 
         else:
-            raise Exception("Attribute type not recognized for: '{}' of class: '{}'".format(attrib_name, attrib_object.__class__))
-
+            raise Exception(
+                "Attribute type not recognized for: '{}' of class: '{}'".format(attrib_name, attrib_object.__class__))
 
         print("Saved: " + npz_file_name)
-
 
     pickle.dump(pickle_attribute_name_to_path_dict.copy(),
                 open(splitted_data_path + file_name_prefix + "_file_list", "wb"),
@@ -62,20 +58,13 @@ def save_data_dict(data_dict, splitted_data_path, file_name_prefix):
                 protocol=pickle.HIGHEST_PROTOCOL)
 
 
-
-
-
-
-
 def load_data_dict(splitted_data_path, file_name_prefix):
-
     file_list = pickle.load(open(splitted_data_path + file_name_prefix + "_file_list", "rb"))
 
     pickle_attribute_name_to_path_dict = {}
 
     for attrib_name in file_list.keys():
-         pickle_attribute_name_to_path_dict[attrib_name] = file_list[attrib_name]
-
+        pickle_attribute_name_to_path_dict[attrib_name] = file_list[attrib_name]
 
     pickle_attribute_name_to_type_dict = {}
 
@@ -83,13 +72,12 @@ def load_data_dict(splitted_data_path, file_name_prefix):
         type_list = pickle.load(open(splitted_data_path + file_name_prefix + "_file_type", "rb"))
 
         for attrib_name in type_list.keys():
-             pickle_attribute_name_to_type_dict[attrib_name] = type_list[attrib_name]
+            pickle_attribute_name_to_type_dict[attrib_name] = type_list[attrib_name]
 
     except FileNotFoundError:
 
-         for attrib_name in file_list.keys():
-             pickle_attribute_name_to_type_dict[attrib_name] = sps.spmatrix
-
+        for attrib_name in file_list.keys():
+            pickle_attribute_name_to_type_dict[attrib_name] = sps.spmatrix
 
     loaded_data_dict = {}
     ICM_dict = {}
@@ -107,7 +95,6 @@ def load_data_dict(splitted_data_path, file_name_prefix):
         else:
             raise Exception("Attribute type not recognized for: '{}' of class: '{}'".format(object_name, object_type))
 
-
         if "ICM_dict" in object_name:
             object_name = object_name.replace("ICM_dict_", "")
             ICM_dict[object_name] = object_data
@@ -115,11 +102,9 @@ def load_data_dict(splitted_data_path, file_name_prefix):
         else:
             loaded_data_dict[object_name] = object_data
 
-
         print("Loaded: " + object_name)
 
-
-    if len(ICM_dict)>0:
+    if len(ICM_dict) > 0:
         loaded_data_dict["ICM_dict"] = ICM_dict
 
     return loaded_data_dict

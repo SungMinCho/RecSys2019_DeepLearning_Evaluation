@@ -153,13 +153,13 @@ def _preprocess_args(parsed_obj, remove_attrs, keep_attrs, keyname):
     for attr in remove_attrs:
         delattr(parsed_obj, attr)
 
+
 def preprocess_args(FLAGS):
     _preprocess_args(FLAGS, set(list(chain.from_iterable(_optimizer_args.values()))),
                      _optimizer_args[FLAGS.optimizer], 'optimizer_params')
 
 
 class BaseConfig(object):
-
     save_directory = None
     _IGNORE = ['fields', 'save', 'load']
 
@@ -199,7 +199,7 @@ class BaseConfig(object):
 
     def _get_dict(self):
         return {key: self.__getattribute__(key) if isinstance(self.__getattribute__(key), (int, float))
-                else str(self.__getattribute__(key)) for key in self.fields}
+        else str(self.__getattribute__(key)) for key in self.fields}
 
     def __repr__(self):
         return json.dumps(self._get_dict(), sort_keys=True, indent=2)
@@ -234,6 +234,7 @@ def create_exp_directory(cwd=''):
         exit(-1)
     return path + '/'
 
+
 def get_logging_config(save_directory):
     # Setup Logging
     return dict(
@@ -245,7 +246,7 @@ def get_logging_config(save_directory):
             },
             # For the console
             'console': {
-                'format':"[%(levelname)s:%(name)s]<%(funcName)s>:%(lineno)d: %(message)s",
+                'format': "[%(levelname)s:%(name)s]<%(funcName)s>:%(lineno)d: %(message)s",
             }
         },
         handlers={

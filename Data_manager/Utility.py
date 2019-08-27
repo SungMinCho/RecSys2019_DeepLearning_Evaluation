@@ -8,6 +8,7 @@
 import scipy.sparse as sps
 import numpy as np
 
+
 def filter_urm(urm, user_min_number_ratings=1, item_min_number_ratings=1):
     # keep only users with at least n ratings, same for the items
     # NOTE: this operation re index both users and items (we get a more compact URM)
@@ -22,28 +23,33 @@ def filter_urm(urm, user_min_number_ratings=1, item_min_number_ratings=1):
 
 
 def print_stat_urm(urm, title=''):
-    if title!='': title = '{:10}'.format(title)+'-> '
+    if title != '': title = '{:10}'.format(title) + '-> '
     n_users = urm.shape[0]
     n_items = urm.shape[1]
     n_ratings = urm.data.shape[0]
     density = n_ratings / (n_users * n_items) * 100
-    print('{}users: {} \titems: {} \tratings: {:8d} \tdensity: {:.3f}%'.format(title,n_users, n_items, n_ratings, density))
+    print('{}users: {} \titems: {} \tratings: {:8d} \tdensity: {:.3f}%'.format(title, n_users, n_items, n_ratings,
+                                                                               density))
+
 
 def print_stat_icm(urm, title=''):
-    if title!='': title = '{:10}'.format(title)+'-> '
+    if title != '': title = '{:10}'.format(title) + '-> '
     n_users = urm.shape[0]
     n_items = urm.shape[1]
     n_ratings = urm.data.shape[0]
     density = n_ratings / (n_users * n_items) * 100
-    print('{}items: {} \tfeatures: {} \tvalues: {:9d} \tdensity: {:.3f}%'.format(title,n_users, n_items, n_ratings, density))
+    print('{}items: {} \tfeatures: {} \tvalues: {:9d} \tdensity: {:.3f}%'.format(title, n_users, n_items, n_ratings,
+                                                                                 density))
+
 
 def print_stat_ucm(urm, title=''):
-    if title!='': title = '{:10}'.format(title)+'-> '
+    if title != '': title = '{:10}'.format(title) + '-> '
     n_users = urm.shape[0]
     n_items = urm.shape[1]
     n_ratings = urm.data.shape[0]
     density = n_ratings / (n_users * n_items) * 100
-    print('{}users: {} \tfeatures: {} \tvalues: {:9d} \tdensity: {:.3f}%'.format(title,n_users, n_items, n_ratings, density))
+    print('{}users: {} \tfeatures: {} \tvalues: {:9d} \tdensity: {:.3f}%'.format(title, n_users, n_items, n_ratings,
+                                                                                 density))
 
 
 def print_stat_datareader(datareader):

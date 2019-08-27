@@ -22,8 +22,6 @@ class ItemKNNCFRecommender(BaseSimilarityMatrixRecommender):
 
     FEATURE_WEIGHTING_VALUES = ["BM25", "TF-IDF", "none"]
 
-
-
     def __init__(self, URM_train):
         super(ItemKNNCFRecommender, self).__init__(URM_train)
 
@@ -31,17 +29,18 @@ class ItemKNNCFRecommender(BaseSimilarityMatrixRecommender):
 
         if cold_items_mask.any():
             print("{}: Detected {} ({:.2f} %) cold items.".format(
-                self.RECOMMENDER_NAME, cold_items_mask.sum(), cold_items_mask.sum()/len(cold_items_mask)*100))
+                self.RECOMMENDER_NAME, cold_items_mask.sum(), cold_items_mask.sum() / len(cold_items_mask) * 100))
 
-
-    def fit(self, topK=50, shrink=100, similarity='cosine', normalize=True, feature_weighting = "none", **similarity_args):
+    def fit(self, topK=50, shrink=100, similarity='cosine', normalize=True, feature_weighting="none",
+            **similarity_args):
 
         self.topK = topK
         self.shrink = shrink
 
         if feature_weighting not in self.FEATURE_WEIGHTING_VALUES:
-            raise ValueError("Value for 'feature_weighting' not recognized. Acceptable values are {}, provided was '{}'".format(self.FEATURE_WEIGHTING_VALUES, feature_weighting))
-
+            raise ValueError(
+                "Value for 'feature_weighting' not recognized. Acceptable values are {}, provided was '{}'".format(
+                    self.FEATURE_WEIGHTING_VALUES, feature_weighting))
 
         if feature_weighting == "BM25":
             self.URM_train = self.URM_train.astype(np.float32)
@@ -53,8 +52,8 @@ class ItemKNNCFRecommender(BaseSimilarityMatrixRecommender):
             self.URM_train = TF_IDF(self.URM_train.T).T
             self.URM_train = check_matrix(self.URM_train, 'csr')
 
-        similarity = Compute_Similarity(self.URM_train, shrink=shrink, topK=topK, normalize=normalize, similarity = similarity, **similarity_args)
-
+        similarity = Compute_Similarity(self.URM_train, shrink=shrink, topK=topK, normalize=normalize,
+                                        similarity=similarity, **similarity_args)
 
         self.W_sparse = similarity.compute_similarity()
         self.W_sparse = check_matrix(self.W_sparse, format='csr')

@@ -41,7 +41,7 @@ class PairwiseGMF(ModelBase):
         """
 
         self.v = DenseLayer(1, False, tf.nn.relu, initializers=self._initializers,
-                                            regularizers=self._regularizers, name='OutputVector')
+                            regularizers=self._regularizers, name='OutputVector')
         self.score = tf.squeeze(self.v(self._cur_user * self._cur_item))
         negative_output = tf.squeeze(self.v(self._cur_user * self._cur_item_negative))
         tf.add_to_collection(GraphKeys.PREDICTION, self.score)

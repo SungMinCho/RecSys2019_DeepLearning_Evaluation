@@ -24,7 +24,7 @@ class MemoryMask(snt.AbstractModule):
     def __init__(self, name='MemoryMask'):
         super(MemoryMask, self).__init__(name=name)
 
-    def _build(self, inputs, mask_length, maxlen=None,):
+    def _build(self, inputs, mask_length, maxlen=None, ):
         """
         Apply a memory mask such that the values we mask result in being the
         minimum possible value we can represent with a float32.
@@ -45,12 +45,11 @@ class MemoryMask(snt.AbstractModule):
         memory_mask = tf.sequence_mask(mask_length, maxlen=maxlen, name='SequenceMask')
         inputs.shape.assert_is_compatible_with(memory_mask.shape)
 
-
         num_remaining_memory_slots = tf.reduce_sum(
             tf.cast(memory_mask, dtype=tf.int32), axis=[1])
 
         with tf.control_dependencies([tf.assert_positive(
-            num_remaining_memory_slots)]):
+                num_remaining_memory_slots)]):
             # Get the numerical limits of a float
             finfo = np.finfo(np.float32)
 
@@ -183,7 +182,7 @@ class VariableLengthMemoryLayer(snt.AbstractModule):
                     # f(Wz + o + b)
                     query = self._activation_fn(hop_mapping(query) + memory_hop.output)
                     tf.add_to_collection(GraphKeys.ACTIVATIONS, query)
-                    tf.logging.info('Creating Hop Mapping {} with {}'.format(hop_k+1,
+                    tf.logging.info('Creating Hop Mapping {} with {}'.format(hop_k + 1,
                                                                              self._activation_fn))
             # Apply attention
             hop = ApplyAttentionMemory('AttentionHop%s' % hop_k)

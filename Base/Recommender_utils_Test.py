@@ -16,7 +16,6 @@ import unittest
 class MyTestCase(unittest.TestCase):
 
     def test_similarityMatrixTopK_denseToDense(self):
-
         numRows = 100
 
         TopK = 20
@@ -24,15 +23,13 @@ class MyTestCase(unittest.TestCase):
         dense_input = np.random.random((numRows, numRows))
         dense_output = similarityMatrixTopK(dense_input, k=TopK)
 
-        numExpectedNonZeroCells = TopK*numRows
+        numExpectedNonZeroCells = TopK * numRows
 
-        numNonZeroCells = np.sum(dense_output!=0)
+        numNonZeroCells = np.sum(dense_output != 0)
 
         self.assertEqual(numExpectedNonZeroCells, numNonZeroCells, "DenseToDense incorrect")
 
-
     def test_similarityMatrixTopK_sparseToSparse(self):
-
         numRows = 20
 
         TopK = 5
@@ -51,6 +48,4 @@ class MyTestCase(unittest.TestCase):
 
 
 if __name__ == '__main__':
-
     unittest.main()
-

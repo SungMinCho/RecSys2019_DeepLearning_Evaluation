@@ -6,13 +6,12 @@ Created on 31/10/18
 @author: Maurizio Ferrari Dacrema
 """
 
-
 import seaborn as sn
+
 sn.set()
 
 import tensorflow as tf
 from tensorflow.contrib.layers import apply_regularization, l2_regularizer
-
 
 
 class MultiDAE(object):
@@ -81,8 +80,8 @@ class MultiDAE(object):
 
         # define weights
         for i, (d_in, d_out) in enumerate(zip(self.dims[:-1], self.dims[1:])):
-            weight_key = "weight_{}to{}".format(i, i+1)
-            bias_key = "bias_{}".format(i+1)
+            weight_key = "weight_{}to{}".format(i, i + 1)
+            bias_key = "bias_{}".format(i + 1)
 
             self.weights.append(tf.get_variable(
                 name=weight_key, shape=[d_in, d_out],
@@ -97,11 +96,6 @@ class MultiDAE(object):
             # add summary stats
             tf.summary.histogram(weight_key, self.weights[-1])
             tf.summary.histogram(bias_key, self.biases[-1])
-
-
-
-
-
 
 
 class MultiVAE(MultiDAE):
@@ -144,7 +138,7 @@ class MultiVAE(MultiDAE):
         mu_q, std_q, KL = None, None, None
 
         h = tf.nn.l2_normalize(self.input_ph, 1)
-        h = tf.nn.dropout(h, rate = 1 - self.keep_prob_ph)
+        h = tf.nn.dropout(h, rate=1 - self.keep_prob_ph)
 
         for i, (w, b) in enumerate(zip(self.weights_q, self.biases_q)):
             h = tf.matmul(h, w) + b
@@ -157,7 +151,7 @@ class MultiVAE(MultiDAE):
 
                 std_q = tf.exp(0.5 * logvar_q)
                 KL = tf.reduce_mean(tf.reduce_sum(
-                        0.5 * (-logvar_q + tf.exp(logvar_q) + mu_q**2 - 1), axis=1))
+                    0.5 * (-logvar_q + tf.exp(logvar_q) + mu_q ** 2 - 1), axis=1))
         return mu_q, std_q, KL
 
     def p_graph(self, z):
@@ -175,8 +169,8 @@ class MultiVAE(MultiDAE):
         mu_q, std_q, KL = self.q_graph()
         epsilon = tf.random_normal(tf.shape(std_q))
 
-        sampled_z = mu_q + self.is_training_ph *\
-            epsilon * std_q
+        sampled_z = mu_q + self.is_training_ph * \
+                    epsilon * std_q
 
         # p-network
         logits = self.p_graph(sampled_z)
@@ -191,8 +185,8 @@ class MultiVAE(MultiDAE):
                 # we need two sets of parameters for mean and variance,
                 # respectively
                 d_out *= 2
-            weight_key = "weight_q_{}to{}".format(i, i+1)
-            bias_key = "bias_q_{}".format(i+1)
+            weight_key = "weight_q_{}to{}".format(i, i + 1)
+            bias_key = "bias_q_{}".format(i + 1)
 
             self.weights_q.append(tf.get_variable(
                 name=weight_key, shape=[d_in, d_out],
@@ -211,8 +205,8 @@ class MultiVAE(MultiDAE):
         self.weights_p, self.biases_p = [], []
 
         for i, (d_in, d_out) in enumerate(zip(self.p_dims[:-1], self.p_dims[1:])):
-            weight_key = "weight_p_{}to{}".format(i, i+1)
-            bias_key = "bias_p_{}".format(i+1)
+            weight_key = "weight_p_{}to{}".format(i, i + 1)
+            bias_key = "bias_p_{}".format(i + 1)
             self.weights_p.append(tf.get_variable(
                 name=weight_key, shape=[d_in, d_out],
                 initializer=tf.contrib.layers.xavier_initializer(
@@ -226,9 +220,3 @@ class MultiVAE(MultiDAE):
             # add summary stats
             tf.summary.histogram(weight_key, self.weights_p[-1])
             tf.summary.histogram(bias_key, self.biases_p[-1])
-
-
-
-
-
-

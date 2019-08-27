@@ -6,17 +6,12 @@ Created on 06/01/18
 @author: Maurizio Ferrari Dacrema
 """
 
-
 import zipfile, os
-
 
 from Data_manager.DataReader import DataReader
 
 
-
-
 class NetflixPrizeReader(DataReader):
-
     DATASET_URL = "https://www.kaggle.com/netflix-inc/netflix-prize-data"
     DATASET_SUBFOLDER = "NetflixPrize/"
     AVAILABLE_ICM = []
@@ -24,12 +19,8 @@ class NetflixPrizeReader(DataReader):
 
     IS_IMPLICIT = True
 
-
-
     def _get_dataset_name_root(self):
         return self.DATASET_SUBFOLDER
-
-
 
     def _load_from_original_file(self):
         # Load data from original
@@ -44,7 +35,9 @@ class NetflixPrizeReader(DataReader):
         except (FileNotFoundError, zipfile.BadZipFile):
 
             print("NetflixPrizeReader: Unable to find data zip file.")
-            print("NetflixPrizeReader: Automatic download not available, please ensure the ZIP data file is in folder {}.".format(self.zip_file_folder))
+            print(
+                "NetflixPrizeReader: Automatic download not available, please ensure the ZIP data file is in folder {}.".format(
+                    self.zip_file_folder))
             print("NetflixPrizeReader: Data can be downloaded here: {}".format(self.DATASET_URL))
 
             # If directory does not exist, create
@@ -53,16 +46,9 @@ class NetflixPrizeReader(DataReader):
 
             raise FileNotFoundError("Automatic download not available.")
 
-
-
         self.URM_all, self.item_original_ID_to_index, self.user_original_ID_to_index = self._loadURM()
 
-
         print("NetflixPrizeReader: loading complete")
-
-
-
-
 
     def _loadURM(self):
 
@@ -71,10 +57,10 @@ class NetflixPrizeReader(DataReader):
         numCells = 0
         URM_builder = IncrementalSparseMatrix(auto_create_col_mapper=True, auto_create_row_mapper=True)
 
-
         for current_split in [1, 2, 3, 4]:
 
-            current_split_path = self.dataFile.extract("combined_data_{}.txt".format(current_split), path=self.decompressed_zip_file_folder + "decompressed/")
+            current_split_path = self.dataFile.extract("combined_data_{}.txt".format(current_split),
+                                                       path=self.decompressed_zip_file_folder + "decompressed/")
 
             fileHandle = open(current_split_path, "r")
 
@@ -84,8 +70,7 @@ class NetflixPrizeReader(DataReader):
 
             for line in fileHandle:
 
-
-                if numCells % 1000000 == 0 and numCells!=0:
+                if numCells % 1000000 == 0 and numCells != 0:
                     print("Processed {} cells".format(numCells))
 
                 if (len(line)) > 1:
@@ -93,7 +78,7 @@ class NetflixPrizeReader(DataReader):
                     line_split = line.split(",")
 
                     # If line has 3 components, it is a 'user_id,rating,date' row
-                    if len(line_split) == 3 and currentMovie_id!= None:
+                    if len(line_split) == 3 and currentMovie_id != None:
 
                         user_id = line_split[0]
 
@@ -115,9 +100,7 @@ class NetflixPrizeReader(DataReader):
                     else:
                         print("Unexpected row: '{}'".format(line))
 
-
             fileHandle.close()
-
 
             print("NetflixPrizeReader: cleaning temporary files")
 
@@ -125,6 +108,4 @@ class NetflixPrizeReader(DataReader):
 
             shutil.rmtree(self.decompressed_zip_file_folder + "decompressed/", ignore_errors=True)
 
-
-        return  URM_builder.get_SparseMatrix(), URM_builder.get_column_token_to_id_mapper(), URM_builder.get_row_token_to_id_mapper()
-
+        return URM_builder.get_SparseMatrix(), URM_builder.get_column_token_to_id_mapper(), URM_builder.get_row_token_to_id_mapper()

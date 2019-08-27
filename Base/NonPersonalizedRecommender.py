@@ -20,31 +20,28 @@ class TopPop(BaseRecommender):
     def __init__(self, URM_train):
         super(TopPop, self).__init__(URM_train)
 
-
     def fit(self):
 
         # Use np.ediff1d and NOT a sum done over the rows as there might be values other than 0/1
         self.item_pop = np.ediff1d(self.URM_train.tocsc().indptr)
         self.n_items = self.URM_train.shape[1]
 
-
-    def _compute_item_score(self, user_id_array, items_to_compute = None):
+    def _compute_item_score(self, user_id_array, items_to_compute=None):
 
         # Create a single (n_items, ) array with the item score, then copy it for every user
 
         if items_to_compute is not None:
-            item_pop_to_copy = - np.ones(self.n_items, dtype=np.float32)*np.inf
+            item_pop_to_copy = - np.ones(self.n_items, dtype=np.float32) * np.inf
             item_pop_to_copy[items_to_compute] = self.item_pop[items_to_compute].copy()
         else:
             item_pop_to_copy = self.item_pop.copy()
 
         scores_batch = np.array(item_pop_to_copy, dtype=np.float32).reshape((1, -1))
-        scores_batch = np.repeat(scores_batch, len(user_id_array), axis = 0)
+        scores_batch = np.repeat(scores_batch, len(user_id_array), axis=0)
 
         return scores_batch
 
-
-    def saveModel(self, folder_path, file_name = None):
+    def saveModel(self, folder_path, file_name=None):
 
         if file_name is None:
             file_name = self.RECOMMENDER_NAME
@@ -60,7 +57,6 @@ class TopPop(BaseRecommender):
         print("{}: Saving complete".format(self.RECOMMENDER_NAME))
 
 
-
 class GlobalEffects(BaseRecommender):
     """docstring for GlobalEffects"""
 
@@ -69,13 +65,11 @@ class GlobalEffects(BaseRecommender):
     def __init__(self, URM_train):
         super(GlobalEffects, self).__init__(URM_train)
 
-
     def fit(self, lambda_user=10, lambda_item=25):
 
         self.lambda_user = lambda_user
         self.lambda_item = lambda_item
         self.n_items = self.URM_train.shape[1]
-
 
         # convert to csc matrix for faster column-wise sum
         self.URM_train = check_matrix(self.URM_train, 'csc', dtype=np.float32)
@@ -113,29 +107,26 @@ class GlobalEffects(BaseRecommender):
 
         # 4) precompute the item ranking by using the item bias only
         # the global average and user bias won't change the ranking, so there is no need to use them
-        #self.item_ranking = np.argsort(self.bi)[::-1]
-
+        # self.item_ranking = np.argsort(self.bi)[::-1]
 
         self.URM_train = check_matrix(self.URM_train, 'csr', dtype=np.float32)
-
 
     def _compute_item_score(self, user_id_array, items_to_compute=None):
 
         # Create a single (n_items, ) array with the item score, then copy it for every user
 
         if items_to_compute is not None:
-            item_bias_to_copy = - np.ones(self.n_items, dtype=np.float32)*np.inf
+            item_bias_to_copy = - np.ones(self.n_items, dtype=np.float32) * np.inf
             item_bias_to_copy[items_to_compute] = self.item_bias[items_to_compute].copy()
         else:
             item_bias_to_copy = self.item_bias.copy()
 
         scores_batch = np.array(item_bias_to_copy, dtype=np.float).reshape((1, -1))
-        scores_batch = np.repeat(scores_batch, len(user_id_array), axis = 0)
+        scores_batch = np.repeat(scores_batch, len(user_id_array), axis=0)
 
         return scores_batch
 
-
-    def saveModel(self, folder_path, file_name = None):
+    def saveModel(self, folder_path, file_name=None):
 
         if file_name is None:
             file_name = self.RECOMMENDER_NAME
@@ -151,7 +142,6 @@ class GlobalEffects(BaseRecommender):
         print("{}: Saving complete".format(self.RECOMMENDER_NAME))
 
 
-
 class Random(BaseRecommender):
     """Random recommender"""
 
@@ -160,18 +150,16 @@ class Random(BaseRecommender):
     def __init__(self, URM_train):
         super(Random, self).__init__(URM_train)
 
-
     def fit(self, random_seed=42):
         np.random.seed(random_seed)
         self.n_items = self.URM_train.shape[1]
 
-
-    def _compute_item_score(self, user_id_array, items_to_compute = None):
+    def _compute_item_score(self, user_id_array, items_to_compute=None):
 
         # Create a random block (len(user_id_array), n_items) array with the item score
 
         if items_to_compute is not None:
-            scores_batch = - np.ones((len(user_id_array), self.n_items), dtype=np.float32)*np.inf
+            scores_batch = - np.ones((len(user_id_array), self.n_items), dtype=np.float32) * np.inf
             scores_batch[:, items_to_compute] = np.random.rand(len(user_id_array), len(items_to_compute))
 
         else:
@@ -179,9 +167,7 @@ class Random(BaseRecommender):
 
         return scores_batch
 
-
-
-    def saveModel(self, folder_path, file_name = None):
+    def saveModel(self, folder_path, file_name=None):
 
         if file_name is None:
             file_name = self.RECOMMENDER_NAME
@@ -194,6 +180,4 @@ class Random(BaseRecommender):
                     open(folder_path + file_name, "wb"),
                     protocol=pickle.HIGHEST_PROTOCOL)
 
-
         print("{}: Saving complete".format(self.RECOMMENDER_NAME))
-

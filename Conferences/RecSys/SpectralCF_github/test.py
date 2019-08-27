@@ -2,20 +2,21 @@ import Conferences.RecSys.SpectralCF_github.utils as ut
 from Conferences.RecSys.SpectralCF_github.params import *
 from Conferences.RecSys.SpectralCF_github.load_data import *
 import multiprocessing
+
 cores = multiprocessing.cpu_count()
 
-data_generator = Data(train_file=DIR+'train_users.dat', test_file=DIR+'test_users.dat',batch_size=BATCH_SIZE)
+data_generator = Data(train_file=DIR + 'train_users.dat', test_file=DIR + 'test_users.dat', batch_size=BATCH_SIZE)
 USER_NUM, ITEM_NUM = data_generator.get_num_users_items()
 
 
 def test_one_user(x):
     # user u's ratings for user u
     rating = x[0]
-    #uid
+    # uid
     u = x[1]
-    #user u's items in the training set
+    # user u's items in the training set
     training_items = data_generator.train_items[u]
-    #user u's items in the test set
+    # user u's items in the test set
     user_pos_test = data_generator.test_set[u]
 
     all_items = set(range(ITEM_NUM))
@@ -42,21 +43,20 @@ def test_one_user(x):
     recall_80 = ut.recall_at_k(r, 80, len(user_pos_test))
     recall_100 = ut.recall_at_k(r, 100, len(user_pos_test))
 
-    ap_20 = ut.average_precision(r,20)
+    ap_20 = ut.average_precision(r, 20)
     ap_40 = ut.average_precision(r, 40)
     ap_60 = ut.average_precision(r, 60)
     ap_80 = ut.average_precision(r, 80)
     ap_100 = ut.average_precision(r, 100)
 
-
-    return np.array([recall_20,recall_40,recall_60,recall_80,recall_100, ap_20,ap_40,ap_60,ap_80,ap_100])
+    return np.array([recall_20, recall_40, recall_60, recall_80, recall_100, ap_20, ap_40, ap_60, ap_80, ap_100])
 
 
 def test(sess, model, users_to_test):
     result = np.array([0.] * 10)
     pool = multiprocessing.Pool(cores)
     batch_size = BATCH_SIZE
-    #all users needed to test
+    # all users needed to test
     test_users = users_to_test
     test_user_num = len(test_users)
     index = 0

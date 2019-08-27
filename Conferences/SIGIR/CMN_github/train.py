@@ -7,7 +7,8 @@
 '''
 import os
 import argparse
-from Conferences.SIGIR.CMN_github.util.helper import get_optimizer_argparse, preprocess_args, create_exp_directory, BaseConfig, get_logging_config
+from Conferences.SIGIR.CMN_github.util.helper import get_optimizer_argparse, preprocess_args, create_exp_directory, \
+    BaseConfig, get_logging_config
 from Conferences.SIGIR.CMN_github.util.data import Dataset
 from Conferences.SIGIR.CMN_github.util.evaluation import evaluate_model, get_eval, get_model_scores
 from Conferences.SIGIR.CMN_github.util.cmn import CollaborativeMemoryNetwork
@@ -36,12 +37,13 @@ parser.add_argument('--pretrain', help='Load pretrained user/item embeddings', t
 parser.set_defaults(optimizer='rmsprop', learning_rate=0.001, decay=0.9, momentum=0.9)
 FLAGS = parser.parse_args()
 preprocess_args(FLAGS)
-#os.environ['CUDA_VISIBLE_DEVICES'] = FLAGS.gpu
+# os.environ['CUDA_VISIBLE_DEVICES'] = FLAGS.gpu
 
 # Create results in here unless we specify a logdir
 BASE_DIR = 'result/'
 if FLAGS.logdir is not None and not os.path.exists(FLAGS.logdir):
     os.mkdir(FLAGS.logdir)
+
 
 class Config(BaseConfig):
     logdir = create_exp_directory(BASE_DIR) if FLAGS.logdir is None else FLAGS.logdir
@@ -61,6 +63,7 @@ class Config(BaseConfig):
     learning_rate = FLAGS.learning_rate
     pretrain = FLAGS.pretrain
     max_neighbors = -1
+
 
 config = Config()
 
@@ -92,8 +95,8 @@ if not FLAGS.resume:
     sess.graph._unsafe_unfinalize()
     tf.logging.info('Loading Pretrained Embeddings.... from %s' % FLAGS.pretrain)
     sess.run([
-        model.user_memory.embeddings.assign(pretrain['user']*0.5),
-        model.item_memory.embeddings.assign(pretrain['item']*0.5)])
+        model.user_memory.embeddings.assign(pretrain['user'] * 0.5),
+        model.item_memory.embeddings.assign(pretrain['item'] * 0.5)])
 
 # Train Loop
 for i in range(FLAGS.iters):
@@ -128,11 +131,11 @@ EVAL_AT = range(1, 11)
 hrs, ndcgs = [], []
 s = ""
 scores, out = get_model_scores(sess, dataset.test_data, dataset.item_users_list, model.input_users, model.input_items,
-                   model.input_neighborhoods, model.input_neighborhood_lengths,
-                   model.dropout, model.score, config.max_neighbors, True)
+                               model.input_neighborhoods, model.input_neighborhood_lengths,
+                               model.dropout, model.score, config.max_neighbors, True)
 
 for k in EVAL_AT:
-    hr, ndcg = get_eval(scores, len(scores[0])-1, k)
+    hr, ndcg = get_eval(scores, len(scores[0]) - 1, k)
     hrs.append(hr)
     ndcgs.append(ndcg)
     s += "{:<14} {:<14.6f}{:<14} {:.6f}\n".format('HR@%s' % k, hr,

@@ -6,12 +6,9 @@ Created on 01/01/2018
 @author: Maurizio Ferrari Dacrema
 """
 
-
 import scipy.sparse as sps
 import numpy as np
 import pickle, os
-
-
 
 
 #################################################################################################################
@@ -19,7 +16,6 @@ import pickle, os
 #############################               DATA READER
 #############################
 #################################################################################################################
-
 
 
 class DataReader(object):
@@ -41,7 +37,6 @@ class DataReader(object):
     DATASET_SPLIT_ROOT_FOLDER = "Data_manager_split_datasets/"
     DATASET_OFFLINE_ROOT_FOLDER = "Data_manager_offline_datasets/"
 
-
     # This subfolder contains the preprocessed data, already loaded from the original data file
     DATASET_SUBFOLDER_ORIGINAL = "original/"
 
@@ -60,8 +55,7 @@ class DataReader(object):
     # This flag specifies if the given dataset contains implicit preferences or explicit ratings
     IS_IMPLICIT = False
 
-
-    def __init__(self, reload_from_original_data = False, ICM_to_load_list = None):
+    def __init__(self, reload_from_original_data=False, ICM_to_load_list=None):
 
         super(DataReader, self).__init__()
 
@@ -79,10 +73,8 @@ class DataReader(object):
                 "DataReader: ICM_to_load_list contains ICM names which are not available for the current DataReader"
             self.ICM_to_load_list = ICM_to_load_list.copy()
 
-
     def is_implicit(self):
         return self.IS_IMPLICIT
-
 
     def _get_dataset_name(self):
         return self._get_dataset_name_root()[:-1]
@@ -92,7 +84,6 @@ class DataReader(object):
 
     def get_URM_from_name(self, URM_name):
         return getattr(self, URM_name).copy()
-
 
     def get_ICM_feature_to_index_mapper_from_name(self, ICM_name):
         return getattr(self, "tokenToFeatureMapper_" + ICM_name).copy()
@@ -111,16 +102,12 @@ class DataReader(object):
         ICM_dict = {}
 
         for ICM_name in self.get_loaded_ICM_names():
-
             ICM_dict[ICM_name] = self.get_ICM_from_name(ICM_name)
-
 
         return ICM_dict
 
-
     def get_URM_all(self):
         return self.URM_all.copy()
-
 
     def print_statistics(self):
 
@@ -128,21 +115,19 @@ class DataReader(object):
 
         n_interactions = self.URM_all.nnz
 
-
         URM_all = sps.csr_matrix(self.URM_all)
         user_profile_length = np.ediff1d(URM_all.indptr)
 
         max_interactions_per_user = user_profile_length.max()
-        avg_interactions_per_user = n_interactions/n_users
+        avg_interactions_per_user = n_interactions / n_users
         min_interactions_per_user = user_profile_length.min()
 
         URM_all = sps.csc_matrix(self.URM_all)
         item_profile_length = np.ediff1d(URM_all.indptr)
 
         max_interactions_per_item = item_profile_length.max()
-        avg_interactions_per_item = n_interactions/n_items
+        avg_interactions_per_item = n_interactions / n_items
         min_interactions_per_item = item_profile_length.min()
-
 
         print("DataReader: current dataset is: {}\n"
               "\tNumber of items: {}\n"
@@ -151,17 +136,17 @@ class DataReader(object):
               "\tInteraction density: {:.2E}\n"
               "\tInteractions per user:\n"
               "\t\t Min: {:.2E}\n"
-              "\t\t Avg: {:.2E}\n"    
-              "\t\t Max: {:.2E}\n"     
-              "\tInteractions per item:\n"    
+              "\t\t Avg: {:.2E}\n"
+              "\t\t Max: {:.2E}\n"
+              "\tInteractions per item:\n"
               "\t\t Min: {:.2E}\n"
-              "\t\t Avg: {:.2E}\n"    
+              "\t\t Avg: {:.2E}\n"
               "\t\t Max: {:.2E}\n".format(
             self.__class__,
             n_items,
             n_users,
             n_interactions,
-            n_interactions/(n_items*n_users),
+            n_interactions / (n_items * n_users),
             min_interactions_per_user,
             avg_interactions_per_user,
             max_interactions_per_user,
@@ -170,17 +155,14 @@ class DataReader(object):
             max_interactions_per_item
         ))
 
-
-
     def _get_dataset_name_root(self):
         """
         Returns the root of the folder tree which contains all of the dataset data/splits and files
 
         :return: Dataset_name/
         """
-        raise NotImplementedError("DataReader: The following method was not implemented for the required dataset. Impossible to load the data")
-
-
+        raise NotImplementedError(
+            "DataReader: The following method was not implemented for the required dataset. Impossible to load the data")
 
     def _get_dataset_name_data_subfolder(self):
         """
@@ -192,8 +174,7 @@ class DataReader(object):
         """
         return self.DATASET_SUBFOLDER_ORIGINAL
 
-
-    def load_data(self, save_folder_path = None):
+    def load_data(self, save_folder_path=None):
         """
 
         :param save_folder_path:    path in which to save the loaded dataset
@@ -205,7 +186,6 @@ class DataReader(object):
         # Use default e.g., "dataset_name/original/"
         if save_folder_path is None:
             save_folder_path = self.DATASET_SPLIT_ROOT_FOLDER + self._get_dataset_name_root() + self._get_dataset_name_data_subfolder()
-
 
         # If save_folder_path contains any path try to load a previously built split from it
         if save_folder_path is not False and not self.reload_from_original_data:
@@ -225,7 +205,6 @@ class DataReader(object):
 
                 print("DataReader: Preloaded data not found, reading from original files...")
                 pass
-
 
         self._load_from_original_file()
 
@@ -251,14 +230,11 @@ class DataReader(object):
                 print("DataReader: Saving {}...".format(ICM_name))
                 sps.save_npz(save_folder_path + "{}.npz".format(ICM_name), self.get_ICM_from_name(ICM_name))
 
-
         self._save_mappers(save_folder_path)
 
         print("DataReader: Saving complete!")
 
         self.print_statistics()
-
-
 
     def _verify_data_consistency(self):
 
@@ -271,65 +247,68 @@ class DataReader(object):
         assert n_interactions != 0, "DataReader consistency check: Number of interactions in URM is 0"
 
         # Check if item index-id and user index-id are consistent
-        assert n_users >= len(self.user_original_ID_to_index), "DataReader consistency check: user it-to-index mapper contains more keys than users"
-        assert n_items_URM >= len(self.item_original_ID_to_index), "DataReader consistency check: item it-to-index mapper contains more keys than items"
+        assert n_users >= len(
+            self.user_original_ID_to_index), "DataReader consistency check: user it-to-index mapper contains more keys than users"
+        assert n_items_URM >= len(
+            self.item_original_ID_to_index), "DataReader consistency check: item it-to-index mapper contains more keys than items"
 
-        assert n_users >= max(self.user_original_ID_to_index.values()), "DataReader consistency check: user it-to-index mapper contains indices greater than number of users"
-        assert n_items_URM >= max(self.item_original_ID_to_index.values()), "DataReader consistency check: item it-to-index mapper contains indices greater than number of item"
-
+        assert n_users >= max(
+            self.user_original_ID_to_index.values()), "DataReader consistency check: user it-to-index mapper contains indices greater than number of users"
+        assert n_items_URM >= max(
+            self.item_original_ID_to_index.values()), "DataReader consistency check: item it-to-index mapper contains indices greater than number of item"
 
         # Check if every non-empty user and item has a mapper value
         URM_all = sps.csc_matrix(URM_all)
-        nonzero_items_mask = np.ediff1d(URM_all.indptr)>0
+        nonzero_items_mask = np.ediff1d(URM_all.indptr) > 0
         nonzero_items = np.arange(0, n_items_URM, dtype=np.int)[nonzero_items_mask]
-        assert np.isin(nonzero_items, np.array(list(self.item_original_ID_to_index.values()))).all(), "DataReader consistency check: there exist items with interactions that do not have a mapper entry"
-
+        assert np.isin(nonzero_items, np.array(list(
+            self.item_original_ID_to_index.values()))).all(), "DataReader consistency check: there exist items with interactions that do not have a mapper entry"
 
         URM_all = sps.csr_matrix(URM_all)
-        nonzero_users_mask = np.ediff1d(URM_all.indptr)>0
+        nonzero_users_mask = np.ediff1d(URM_all.indptr) > 0
         nonzero_users = np.arange(0, n_users, dtype=np.int)[nonzero_users_mask]
-        assert np.isin(nonzero_users, np.array(list(self.user_original_ID_to_index.values()))).all(), "DataReader consistency check: there exist users with interactions that do not have a mapper entry"
-
+        assert np.isin(nonzero_users, np.array(list(
+            self.user_original_ID_to_index.values()))).all(), "DataReader consistency check: there exist users with interactions that do not have a mapper entry"
 
         for ICM_name in self.get_loaded_ICM_names():
-
             ICM_object = self.get_ICM_from_name(ICM_name)
             feature_original_id_to_index = self.get_ICM_feature_to_index_mapper_from_name(ICM_name)
 
             n_items_ICM, n_features = ICM_object.shape
             n_feature_occurrences = ICM_object.nnz
 
-            assert n_items_ICM == n_items_URM, "DataReader consistency check: Number of users in ICM {} is {} while in URM is {}".format(ICM_name, n_items_ICM, n_items_URM)
+            assert n_items_ICM == n_items_URM, "DataReader consistency check: Number of users in ICM {} is {} while in URM is {}".format(
+                ICM_name, n_items_ICM, n_items_URM)
             assert n_features != 0, "DataReader consistency check: Number of features in ICM {} is 0".format(ICM_name)
-            assert n_feature_occurrences != 0, "DataReader consistency check: Number of interactions in ICM {} is 0".format(ICM_name)
+            assert n_feature_occurrences != 0, "DataReader consistency check: Number of interactions in ICM {} is 0".format(
+                ICM_name)
 
-
-            assert n_features >= len(feature_original_id_to_index), "DataReader consistency check: feature id-to-index mapper contains more keys than features in ICM {}".format(ICM_name)
-            assert n_features >= max(feature_original_id_to_index.values()), "DataReader consistency check: feature id-to-index mapper contains indices greater than number of features in ICM {}".format(ICM_name)
+            assert n_features >= len(
+                feature_original_id_to_index), "DataReader consistency check: feature id-to-index mapper contains more keys than features in ICM {}".format(
+                ICM_name)
+            assert n_features >= max(
+                feature_original_id_to_index.values()), "DataReader consistency check: feature id-to-index mapper contains indices greater than number of features in ICM {}".format(
+                ICM_name)
 
             # Check if every non-empty item and feature has a mapper value
             ICM_object = sps.csr_matrix(ICM_object)
-            nonzero_items_mask = np.ediff1d(ICM_object.indptr)>0
+            nonzero_items_mask = np.ediff1d(ICM_object.indptr) > 0
             nonzero_items = np.arange(0, n_items_URM, dtype=np.int)[nonzero_items_mask]
-            assert np.isin(nonzero_items, np.array(list(self.item_original_ID_to_index.values()))).all(), "DataReader consistency check: there exist items with features that do not have a mapper entry in ICM {}".format(ICM_name)
-
+            assert np.isin(nonzero_items, np.array(list(
+                self.item_original_ID_to_index.values()))).all(), "DataReader consistency check: there exist items with features that do not have a mapper entry in ICM {}".format(
+                ICM_name)
 
             ICM_object = sps.csc_matrix(ICM_object)
-            nonzero_features_mask = np.ediff1d(ICM_object.indptr)>0
+            nonzero_features_mask = np.ediff1d(ICM_object.indptr) > 0
             nonzero_features = np.arange(0, n_features, dtype=np.int)[nonzero_features_mask]
-            assert np.isin(nonzero_features, np.array(list(feature_original_id_to_index.values()))).all(), "DataReader consistency check: there exist users with interactions that do not have a mapper entry in ICM {}".format(ICM_name)
-
-
-
+            assert np.isin(nonzero_features, np.array(list(
+                feature_original_id_to_index.values()))).all(), "DataReader consistency check: there exist users with interactions that do not have a mapper entry in ICM {}".format(
+                ICM_name)
 
     def _load_from_original_file(self):
 
-        raise NotImplementedError("DataReader: The following method was not implemented for the required dataset. Impossible to load the data")
-
-
-
-
-
+        raise NotImplementedError(
+            "DataReader: The following method was not implemented for the required dataset. Impossible to load the data")
 
     def _load_from_saved_sparse_matrix(self, save_folder_path):
 
@@ -338,17 +317,12 @@ class DataReader(object):
         file_names_to_load.extend(self.get_loaded_URM_names())
 
         for file_name in file_names_to_load:
-
             print("DataReader: Loading {}...".format(save_folder_path + file_name))
             self.__setattr__(file_name, sps.load_npz("{}.npz".format(save_folder_path + file_name)))
 
         self._load_mappers(save_folder_path)
 
         print("DataReader: Loading complete!")
-
-
-
-
 
     def _save_mappers(self, save_folder_path):
         """
@@ -364,13 +338,9 @@ class DataReader(object):
         for ICM_name in self.get_loaded_ICM_names():
             mappers_list.append("tokenToFeatureMapper_{}".format(ICM_name))
 
-
         for mapper_name in mappers_list:
             mapper_data = self.__getattribute__(mapper_name)
             pickle.dump(mapper_data, open(save_folder_path + mapper_name, "wb"), protocol=pickle.HIGHEST_PROTOCOL)
-
-
-
 
     def _load_mappers(self, save_folder_path):
         """
@@ -387,9 +357,6 @@ class DataReader(object):
         for mapper_name in mappers_list:
             self.__setattr__(mapper_name, pickle.load(open(save_folder_path + mapper_name, "rb")))
 
-
-
-
     def _merge_ICM(self, ICM1, ICM2, mapper_ICM1, mapper_ICM2):
 
         ICM_all = sps.hstack([ICM1, ICM2], format='csr')
@@ -399,6 +366,4 @@ class DataReader(object):
         for key in mapper_ICM2.keys():
             mapper_ICM_all[key] = mapper_ICM2[key] + len(mapper_ICM1)
 
-        return  ICM_all, mapper_ICM_all
-
-
+        return ICM_all, mapper_ICM_all

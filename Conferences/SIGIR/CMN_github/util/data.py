@@ -65,7 +65,7 @@ class Dataset(object):
 
     def _generate_data(self, neg_count):
         idx = 0
-        self._examples = np.zeros((self.train_size*neg_count, 3),
+        self._examples = np.zeros((self.train_size * neg_count, 3),
                                   dtype=np.uint32)
         self._examples[:, :] = 0
         for user_idx, item_idx in self.train_data:

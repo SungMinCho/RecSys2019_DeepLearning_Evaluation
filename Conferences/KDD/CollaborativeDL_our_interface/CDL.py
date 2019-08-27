@@ -1,10 +1,13 @@
 import numpy as np
 import tensorflow as tf
 import matplotlib
+
 matplotlib.use('Agg')
 import time
 import collections
-from Conferences.KDD.CollaborativeDL_github_python.Tensorflow_CDL.src.utils import evaluation,make_records,SDAE_calculate,variable_save
+from Conferences.KDD.CollaborativeDL_github_python.Tensorflow_CDL.src.utils import evaluation, make_records, \
+    SDAE_calculate, variable_save
+
 
 class CDL():
     def __init__(self, sess,
@@ -129,8 +132,8 @@ class CDL():
             cdl_learning_rate, self.step, self.decay_step, self.decay_rate, staircase=True, name="lr"
         )
 
-        self.train_var_list1 = [] # U , V
-        self.train_var_list2 = [] # W , b
+        self.train_var_list1 = []  # U , V
+        self.train_var_list2 = []  # W , b
 
         # self.random_seed = random_seed
         self.model_name = model_name
@@ -149,14 +152,13 @@ class CDL():
         init = tf.global_variables_initializer()
         self.sess.run(init)
 
-
-
     def prepare_model(self):
-        self.model_mask_corruption = tf.placeholder(dtype=tf.float32, shape=[None, self.num_voca], name="model_mask_corruption")
+        self.model_mask_corruption = tf.placeholder(dtype=tf.float32, shape=[None, self.num_voca],
+                                                    name="model_mask_corruption")
         self.model_X = tf.placeholder(dtype=tf.float32, shape=[None, self.num_voca], name="model_X")
-        self.model_input_R = tf.placeholder(dtype=tf.float32, shape=[self.num_user,None], name="model_input_R")
+        self.model_input_R = tf.placeholder(dtype=tf.float32, shape=[self.num_user, None], name="model_input_R")
         # self.model_input_mask_R = tf.placeholder(dtype=tf.float32, shape=[self.num_user, None], name="model_input_mask_R")
-        self.model_C = tf.placeholder(dtype=tf.float32, shape=[self.num_user,None], name="model_C")
+        self.model_C = tf.placeholder(dtype=tf.float32, shape=[self.num_user, None], name="model_C")
 
         self.model_num_voting = tf.placeholder(dtype=tf.float32)
         self.model_keep_prob = tf.placeholder(dtype=tf.float32)
@@ -165,13 +167,15 @@ class CDL():
         X_corrupted = tf.multiply(self.model_mask_corruption, self.model_X)
         real_batch_size = tf.cast(tf.shape(self.model_X)[0], tf.int32)
         # X_c, layer_structure, W, b, batch_normalization, post_activation_bn, activation, model_keep_prob
-        Encoded_X, sdae_output = SDAE_calculate(self.model_name,X_corrupted, self.layer_structure, self.Weight, self.bias,
-                                               self.do_batch_norm, self.f_act,self.g_act, self.model_keep_prob)
+        Encoded_X, sdae_output = SDAE_calculate(self.model_name, X_corrupted, self.layer_structure, self.Weight,
+                                                self.bias,
+                                                self.do_batch_norm, self.f_act, self.g_act, self.model_keep_prob)
 
         with tf.variable_scope("CDL_Variable"):
             self.v_jk = tf.get_variable(name="item_factor", shape=[self.num_item, self.hidden_neuron], dtype=tf.float32)
             self.u_ik = tf.get_variable(name="user_factor", shape=[self.num_user, self.hidden_neuron], dtype=tf.float32)
-        batch_v_jk = tf.reshape(tf.gather(self.v_jk, self.model_batch_data_idx), shape=[real_batch_size, self.hidden_neuron])
+        batch_v_jk = tf.reshape(tf.gather(self.v_jk, self.model_batch_data_idx),
+                                shape=[real_batch_size, self.hidden_neuron])
 
         tmp_likelihood1 = tf.constant(0, dtype=tf.float32)
         for itr in range(len(self.Weight.keys())):
@@ -182,7 +186,8 @@ class CDL():
         loss_2 = self.lambda_v * tf.nn.l2_loss(batch_v_jk - Encoded_X)
         loss_3 = self.lambda_n * tf.nn.l2_loss(sdae_output - self.model_X)
         loss_4 = tf.reduce_sum(tf.multiply(self.model_C,
-                                      tf.square(self.model_input_R - tf.matmul(self.u_ik, batch_v_jk, transpose_b=True))))
+                                           tf.square(self.model_input_R - tf.matmul(self.u_ik, batch_v_jk,
+                                                                                    transpose_b=True))))
 
         self.cost = loss_1 + loss_2 + loss_3 + loss_4
 
@@ -196,8 +201,8 @@ class CDL():
             optimizer1 = tf.train.AdamOptimizer(self.lr)
             optimizer2 = tf.train.AdamOptimizer(self.lr)
         elif self.optimizer_method == "Momentum":
-            optimizer1 = tf.train.MomentumOptimizer(self.lr,0.9)
-            optimizer2 = tf.train.MomentumOptimizer(self.lr,0.9)
+            optimizer1 = tf.train.MomentumOptimizer(self.lr, 0.9)
+            optimizer2 = tf.train.MomentumOptimizer(self.lr, 0.9)
         elif self.optimizer_method == "Adadelta":
             optimizer1 = tf.train.AdadeltaOptimizer()
             optimizer2 = tf.train.AdadeltaOptimizer()
@@ -211,7 +216,6 @@ class CDL():
         gvs = optimizer2.compute_gradients(self.cost, var_list=self.train_var_list2)
         capped_gvs = [(tf.clip_by_value(grad, -5., 5.), var) for grad, var in gvs]
         self.optimizer2 = optimizer2.apply_gradients(capped_gvs, global_step=self.step)
-
 
     #
     #
@@ -230,12 +234,10 @@ class CDL():
     #     variable_save(self.result_path, self.model_name,self.train_var_list1, self.train_var_list2, self.Estimated_R, self.test_R,
     #                   self.test_mask_R)
 
-
-
     def train_model(self, epoch_itr):
         start_time = time.time()
-        total_batch = int(self.num_item /float(self.batch_size)) + 1
-        mask_corruption_np = np.random.binomial(1, 1-self.cdl_corruption_level,
+        total_batch = int(self.num_item / float(self.batch_size)) + 1
+        mask_corruption_np = np.random.binomial(1, 1 - self.cdl_corruption_level,
                                                 (self.num_item, self.num_voca))
         random_perm_doc_idx = np.random.permutation(self.num_item)
         batch_cost = 0
@@ -244,8 +246,7 @@ class CDL():
             if i == total_batch - 1:
                 batch_set_idx = random_perm_doc_idx[i * self.batch_size:]
             elif i < total_batch - 1:
-                batch_set_idx = random_perm_doc_idx[i * self.batch_size : (i+1) * self.batch_size]
-
+                batch_set_idx = random_perm_doc_idx[i * self.batch_size: (i + 1) * self.batch_size]
 
             model_input_R = self.URM_train[:, batch_set_idx]
             model_C = model_input_R.copy()
@@ -254,15 +255,14 @@ class CDL():
             model_C = model_C.toarray()
             model_input_R = model_input_R.toarray()
 
-            item_data_dw = self.ICM[batch_set_idx,:].toarray()
-
+            item_data_dw = self.ICM[batch_set_idx, :].toarray()
 
             _, Cost = self.sess.run(
                 [self.optimizer1, self.cost],
-                feed_dict={self.model_mask_corruption: mask_corruption_np[batch_set_idx,:],
+                feed_dict={self.model_mask_corruption: mask_corruption_np[batch_set_idx, :],
                            # self.model_X: self.item_data_dw[batch_set_idx,:],
                            self.model_X: item_data_dw,
-                           #self.model_input_R: self.train_R[:, batch_set_idx],
+                           # self.model_input_R: self.train_R[:, batch_set_idx],
                            self.model_input_R: model_input_R,
                            # self.model_C: self.C[:, batch_set_idx],
                            self.model_C: model_C,
@@ -273,10 +273,10 @@ class CDL():
 
             _, Cost = self.sess.run(
                 [self.optimizer2, self.cost],
-                feed_dict={self.model_mask_corruption: mask_corruption_np[batch_set_idx,:],
+                feed_dict={self.model_mask_corruption: mask_corruption_np[batch_set_idx, :],
                            # self.model_X: self.item_data_dw[batch_set_idx,:],
                            self.model_X: item_data_dw,
-                           #self.model_input_R: self.train_R[:, batch_set_idx],
+                           # self.model_input_R: self.train_R[:, batch_set_idx],
                            self.model_input_R: model_input_R,
                            # self.model_C: self.C[:, batch_set_idx],
                            self.model_C: model_C,
@@ -291,9 +291,6 @@ class CDL():
         # if epoch_itr % self.display_step == 0:
         #     print ("Training //", "Epoch %d //" % (epoch_itr), " Total cost = {:.2f}".format(batch_cost),
         #            "Elapsed time : %d sec" % (time.time() - start_time))
-
-
-
 
     #
     # def test_model(self, itr):
@@ -347,6 +344,3 @@ class CDL():
     #         print ("========== Early Stopping at Epoch %d" %itr)
     #
     #
-
-
-

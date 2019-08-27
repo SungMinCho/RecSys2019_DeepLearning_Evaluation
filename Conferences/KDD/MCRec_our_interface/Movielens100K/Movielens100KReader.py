@@ -6,9 +6,6 @@ Created on 08/11/18
 @author: Maurizio Ferrari Dacrema
 """
 
-
-
-
 import os, zipfile, shutil
 
 import numpy as np
@@ -19,13 +16,12 @@ from Data_manager.load_and_save_data import load_data_dict, save_data_dict
 
 from Data_manager.Movielens100K.Movielens100KReader import Movielens100KReader as Movielens100KReader_DataManager
 
-class Movielens100KReader(object):
 
+class Movielens100KReader(object):
 
     def __init__(self):
 
         super(Movielens100KReader, self).__init__()
-
 
         pre_splitted_path = "Data_manager_split_datasets/Movielens100K/KDD/MCRec_our_interface/"
 
@@ -42,7 +38,7 @@ class Movielens100KReader(object):
             print("Movielens100KReader: Attempting to load pre-splitted data")
 
             for attrib_name, attrib_object in load_data_dict(pre_splitted_path, pre_splitted_filename).items():
-                 self.__setattr__(attrib_name, attrib_object)
+                self.__setattr__(attrib_name, attrib_object)
 
 
         except FileNotFoundError:
@@ -50,7 +46,6 @@ class Movielens100KReader(object):
             print("Movielens100KReader: Pre-splitted data not found, building new one")
 
             print("Movielens100KReader: loading URM")
-
 
             from Conferences.KDD.MCRec_github.code.Dataset import Dataset
 
@@ -66,41 +61,33 @@ class Movielens100KReader(object):
 
             self.URM_train = sps.csr_matrix((np.ones_like(URM_train.data), (URM_train.row, URM_train.col)))
 
-
             num_users, num_items = self.URM_train.shape
-
-
 
             # Build sparse matrices from lists
             URM_test_builder = IncrementalSparseMatrix(n_rows=num_users, n_cols=num_items)
             URM_test_negative_builder = IncrementalSparseMatrix(n_rows=num_users, n_cols=num_items)
 
-
             for user_index in range(len(testRatings)):
-
                 user_id = testRatings[user_index][0]
                 current_user_test_items = testRatings[user_index][1:]
                 current_user_test_negative_items = testNegatives[user_index]
 
-                current_user_test_items = np.array(current_user_test_items) -1
-                current_user_test_negative_items = np.array(current_user_test_negative_items) -1
+                current_user_test_items = np.array(current_user_test_items) - 1
+                current_user_test_negative_items = np.array(current_user_test_negative_items) - 1
 
-                URM_test_builder.add_single_row(user_id -1, current_user_test_items, 1.0)
-                URM_test_negative_builder.add_single_row(user_id -1, current_user_test_negative_items, 1.0)
-
-
+                URM_test_builder.add_single_row(user_id - 1, current_user_test_items, 1.0)
+                URM_test_negative_builder.add_single_row(user_id - 1, current_user_test_negative_items, 1.0)
 
             # the test data has repeated data, apparently
             self.URM_test = URM_test_builder.get_SparseMatrix()
 
             self.URM_test_negative = URM_test_negative_builder.get_SparseMatrix()
 
-
             # Split validation from train as 10%
             from Data_manager.split_functions.split_train_validation import split_train_validation_percentage_user_wise
 
-            self.URM_train, self.URM_validation = split_train_validation_percentage_user_wise(self.URM_train, train_percentage=0.9)
-
+            self.URM_train, self.URM_validation = split_train_validation_percentage_user_wise(self.URM_train,
+                                                                                              train_percentage=0.9)
 
             # Load features
 
@@ -119,7 +106,6 @@ class Movielens100KReader(object):
 
             self.ICM_dict = {"ICM_genre": ICM_genre}
 
-
             data_dict = {
                 "URM_train": self.URM_train,
                 "URM_test": self.URM_test,
@@ -133,10 +119,7 @@ class Movielens100KReader(object):
 
             print("Movielens100KReader: loading complete")
 
-
-
-
-    def _loadICM (self, filePath, header = False, separator="|"):
+    def _loadICM(self, filePath, header=False, separator="|"):
 
         ICM_builder = IncrementalSparseMatrix(auto_create_col_mapper=True, auto_create_row_mapper=True)
 
@@ -157,11 +140,10 @@ class Movielens100KReader(object):
                 line[-1] = line[-1].replace("\n", "")
 
                 genre_list = [int(genre_bit) for genre_bit in line[5:]]
-                item_id = int(line[0])-1
+                item_id = int(line[0]) - 1
 
-                ICM_builder.add_data_lists([item_id]*len(genre_list), genre_list, [1.0]*len(genre_list))
-
+                ICM_builder.add_data_lists([item_id] * len(genre_list), genre_list, [1.0] * len(genre_list))
 
         fileHandle.close()
 
-        return  ICM_builder
+        return ICM_builder

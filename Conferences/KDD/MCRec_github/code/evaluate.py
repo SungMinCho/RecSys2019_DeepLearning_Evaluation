@@ -8,13 +8,14 @@ Evaluate the performance of Top-K recommendation:
 @author: hexiangnan
 '''
 import math
-import heapq # for retrieval topK
+import heapq  # for retrieval topK
 import multiprocessing
 import numpy as np
 from time import time
 import scipy.sparse as sp
 import gc
-#from numba import jit, autojit
+
+# from numba import jit, autojit
 
 # Global variables that are shared across processes
 _model = None
@@ -37,7 +38,8 @@ _type_feature = None
 _features = None
 
 
-def evaluate_model(model, user_feature, item_feature, type_feature, num_users, num_items, path_umtm, path_umum, path_umtmum, path_uuum, path_nums, timestamps, length, testRatings, testNegatives, K, num_thread):
+def evaluate_model(model, user_feature, item_feature, type_feature, num_users, num_items, path_umtm, path_umum,
+                   path_umtmum, path_uuum, path_nums, timestamps, length, testRatings, testNegatives, K, num_thread):
     """
     Evaluate the performance (Hit_Ratio, NDCG) of top-K recommendation
     Return: score of each test rating.
@@ -79,8 +81,8 @@ def evaluate_model(model, user_feature, item_feature, type_feature, num_users, n
     _item_feature = item_feature
     _type_feature = type_feature
     _features = [user_feature, item_feature, type_feature]
-    ps, rs, ndcgs = [],[], []
-    if(num_thread > 1): # Multi-thread
+    ps, rs, ndcgs = [], [], []
+    if (num_thread > 1):  # Multi-thread
         pool = multiprocessing.Pool(processes=num_thread)
         res = pool.map(eval_one_rating, range(len(_testRatings)))
         pool.close()
@@ -93,15 +95,16 @@ def evaluate_model(model, user_feature, item_feature, type_feature, num_users, n
         (p, r, ndcg) = eval_one_rating(idx)
         ps.append(p)
         rs.append(r)
-        ndcgs.append(ndcg)      
+        ndcgs.append(ndcg)
     return (ps, rs, ndcgs)
+
 
 def eval_one_rating(idx):
     rating = _testRatings[idx]
     items = _testNegatives[idx]
     u = rating[0]
     gtItems = rating[1:]
-    #items.append(gtItem)
+    # items.append(gtItem)
     items += gtItems
     # Get prediction scores
     map_item_score = {}
@@ -110,15 +113,15 @@ def eval_one_rating(idx):
     umtm_input = np.zeros((len(items), _path_nums[0], _timestamps[0], _length))
     umum_input = np.zeros((len(items), _path_nums[1], _timestamps[1], _length))
     umtmum_input = np.zeros((len(items), _path_nums[2], _timestamps[2], _length))
-    uuum_input = np.zeros((len(items), _path_nums[3], _timestamps[3], _length)) 
-    
+    uuum_input = np.zeros((len(items), _path_nums[3], _timestamps[3], _length))
+
     k = 0
     for i in items:
-        
+
         user_input.append(u)
         item_input.append(i)
 
-        if (u, i) in _path_umtm: 
+        if (u, i) in _path_umtm:
             for p_i in range(len(_path_umtm[(u, i)])):
                 for p_j in range(len(_path_umtm[(u, i)][p_i])):
                     type_id = _path_umtm[(u, i)][p_i][p_j][0]
@@ -130,7 +133,7 @@ def eval_one_rating(idx):
                     elif type_id == 3:
                         umtm_input[k][p_i][p_j] = _type_feature[index]
 
-        if (u, i) in _path_umum: 
+        if (u, i) in _path_umum:
             for p_i in range(len(_path_umum[(u, i)])):
                 for p_j in range(len(_path_umum[(u, i)][p_i])):
                     type_id = _path_umum[(u, i)][p_i][p_j][0]
@@ -141,7 +144,7 @@ def eval_one_rating(idx):
                         umum_input[k][p_i][p_j] = _item_feature[index]
                     elif type_id == 3:
                         umum_input[k][p_i][p_j] = _type_feature[index]
-            
+
         if (u, i) in _path_umtmum:
             for p_i in range(len(_path_umtmum[(u, i)])):
                 for p_j in range(len(_path_umtmum[(u, i)][p_i])):
@@ -165,21 +168,23 @@ def eval_one_rating(idx):
                     elif type_id == 3:
                         uuum_input[k][p_i][p_j] = _type_feature[index]
         k += 1
-    
-    #print umtm_input.shape
-    predictions = _model.predict([np.array(user_input), np.array(item_input), umtm_input, umum_input, umtmum_input, uuum_input], 
-                                 batch_size = 256, verbose = 0)
-    #print atten.shape
+
+    # print umtm_input.shape
+    predictions = _model.predict(
+        [np.array(user_input), np.array(item_input), umtm_input, umum_input, umtmum_input, uuum_input],
+        batch_size=256, verbose=0)
+    # print atten.shape
     for i in range(len(items)):
         item = items[i]
         map_item_score[item] = predictions[i]
-    #items.pop()
+    # items.pop()
     # Evaluate top rank list
     ranklist = heapq.nlargest(_K, map_item_score, key=map_item_score.get)
     p = getP(ranklist, gtItems)
     r = getR(ranklist, gtItems)
     ndcg = getNDCG(ranklist, gtItems)
     return (p, r, ndcg)
+
 
 def getP(ranklist, gtItems):
     p = 0
@@ -188,6 +193,7 @@ def getP(ranklist, gtItems):
             p += 1
     return p * 1.0 / len(ranklist)
 
+
 def getR(ranklist, gtItems):
     r = 0
     for item in ranklist:
@@ -195,11 +201,13 @@ def getR(ranklist, gtItems):
             r += 1
     return r * 1.0 / len(gtItems)
 
+
 def getHitRatio(ranklist, gtItem):
     for item in ranklist:
         if item == gtItem:
             return 1
     return 0
+
 
 def getDCG(ranklist, gtItems):
     dcg = 0.0
@@ -207,7 +215,8 @@ def getDCG(ranklist, gtItems):
         item = ranklist[i]
         if item in gtItems:
             dcg += 1.0 / math.log(i + 2)
-    return  dcg
+    return dcg
+
 
 def getIDCG(ranklist, gtItems):
     idcg = 0.0
@@ -216,7 +225,8 @@ def getIDCG(ranklist, gtItems):
         if item in gtItems:
             idcg += 1.0 / math.log(i + 2)
             i += 1
-    return idcg 
+    return idcg
+
 
 def getNDCG(ranklist, gtItems):
     dcg = getDCG(ranklist, gtItems)
@@ -225,8 +235,7 @@ def getNDCG(ranklist, gtItems):
         return 0
     return dcg / idcg
 
-
-#def getNDCG(ranklist, gtItems):
+# def getNDCG(ranklist, gtItems):
 #    for i in xrange(len(ranklist)):
 #        item = ranklist[i]
 #        if item == gtItems:
